@@ -10,18 +10,13 @@ import com.bx.imcommon.mq.RedisMQTemplate;
 import com.bx.imserver.constant.ChannelAttrKey;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class HeartbeatProcessor extends AbstractMessageProcessor<IMHeartbeatInfo> {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HeartbeatProcessor.class);
     private final RedisMQTemplate redisMQTemplate;
 
     @Override
@@ -45,12 +40,16 @@ public class HeartbeatProcessor extends AbstractMessageProcessor<IMHeartbeatInfo
         }
         AttributeKey<Long> userIdAttr = AttributeKey.valueOf(ChannelAttrKey.USER_ID);
         Long userId = ctx.channel().attr(userIdAttr).get();
-        log.debug("心跳,userId:{},{}",userId,ctx.channel().id().asLongText());
+        log.debug("心跳,userId:{},{}", userId, ctx.channel().id().asLongText());
     }
 
     @Override
     public IMHeartbeatInfo transForm(Object o) {
         HashMap map = (HashMap) o;
         return BeanUtil.fillBeanWithMap(map, new IMHeartbeatInfo(), false);
+    }
+
+    public HeartbeatProcessor(final RedisMQTemplate redisMQTemplate) {
+        this.redisMQTemplate = redisMQTemplate;
     }
 }

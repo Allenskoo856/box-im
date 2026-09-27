@@ -4,12 +4,9 @@ import cn.hutool.core.util.StrUtil;
 import com.bx.imcommon.util.ThreadPoolExecutorFactory;
 import com.bx.implatform.service.SensitiveWordService;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,28 +18,23 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @author Andrews
  * @date 2023/12/4 11:12
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public final class SensitiveFilterUtil {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SensitiveFilterUtil.class);
     /**
      * 替换符
      */
     private static final String REPLACE_MENT = "***";
-
     /**
      * 根节点
      */
-    private static  TrieNode ROOT_NODE = new TrieNode();
-
+    private static TrieNode ROOT_NODE = new TrieNode();
     /**
      * 线程池
      */
-    private static final ScheduledThreadPoolExecutor EXECUTOR_SERVICE =
-        ThreadPoolExecutorFactory.getThreadPoolExecutor();
-
+    private static final ScheduledThreadPoolExecutor EXECUTOR_SERVICE = ThreadPoolExecutorFactory.getThreadPoolExecutor();
     private final SensitiveWordService sensitiveWordService;
+
 
     /**
      * 1、 前缀树  前缀树某一个节点
@@ -53,7 +45,6 @@ public final class SensitiveFilterUtil {
     private static class TrieNode {
         // 关键词结束标识
         private boolean isKeywordEnd = false;
-
         // 子节点(key是下级字符,value是下级节点)
         // 当前节点的子节点
         private final Map<Character, TrieNode> subNodes = new HashMap<>();
@@ -75,7 +66,6 @@ public final class SensitiveFilterUtil {
         public TrieNode getSubNode(Character c) {
             return subNodes.get(c);
         }
-
     }
 
     /**
@@ -92,7 +82,7 @@ public final class SensitiveFilterUtil {
         keywords.forEach(keyword -> {
             if (StrUtil.isNotEmpty(keyword)) {
                 // 添加到前缀树
-                addKeyword(newNode,keyword);
+                addKeyword(newNode, keyword);
             }
         });
         ROOT_NODE = newNode;
@@ -177,9 +167,9 @@ public final class SensitiveFilterUtil {
                         // 检查下一个字符
                         position++;
                     }
-                }
+                } else 
                 // position遍历越界仍未匹配到敏感词
-                else {
+                {
                     sb.append(text.charAt(begin));
                     position = ++begin;
                     tempNode = ROOT_NODE;
@@ -200,8 +190,10 @@ public final class SensitiveFilterUtil {
      */
     private boolean isSymbol(Character c) {
         // 0x2E80~0x9FFF 是东亚文字范围
-        return !CharUtils.isAsciiAlphanumeric(c) && (c < 0x2E80 || c > 0x9FFF);
+        return !CharUtils.isAsciiAlphanumeric(c) && (c < 11904 || c > 40959);
+    }
+
+    public SensitiveFilterUtil(final SensitiveWordService sensitiveWordService) {
+        this.sensitiveWordService = sensitiveWordService;
     }
 }
-
-

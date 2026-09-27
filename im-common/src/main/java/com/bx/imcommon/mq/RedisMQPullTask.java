@@ -3,11 +3,9 @@ package com.bx.imcommon.mq;
 import com.alibaba.fastjson.JSONObject;
 import com.bx.imcommon.util.ThreadPoolExecutorFactory;
 import jakarta.annotation.PreDestroy;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -24,15 +22,12 @@ import java.util.concurrent.TimeUnit;
  * @date: 2024-07-15
  * @version: 1.0
  */
-@Slf4j
 @Component
 public class RedisMQPullTask implements CommandLineRunner {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RedisMQPullTask.class);
     private static final ScheduledThreadPoolExecutor EXECUTOR = ThreadPoolExecutorFactory.getThreadPoolExecutor();
-
     @Autowired(required = false)
     private List<RedisMQConsumer> consumers = Collections.emptyList();
-
     @Autowired
     private RedisMQTemplate redisMQTemplate;
 
@@ -46,7 +41,7 @@ public class RedisMQPullTask implements CommandLineRunner {
             int period = annotation.period();
             // 获取泛型类型
             Type superClass = consumer.getClass().getGenericSuperclass();
-            Type type = ((ParameterizedType)superClass).getActualTypeArguments()[0];
+            Type type = ((ParameterizedType) superClass).getActualTypeArguments()[0];
             EXECUTOR.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -58,7 +53,7 @@ public class RedisMQPullTask implements CommandLineRunner {
                             List<Object> objects = pullBatch(key, batchSize);
                             for (Object obj : objects) {
                                 if (obj instanceof JSONObject) {
-                                    JSONObject jsonObject = (JSONObject)obj;
+                                    JSONObject jsonObject = (JSONObject) obj;
                                     Object data = jsonObject.toJavaObject(type);
                                     consumer.onMessage(data);
                                     datas.add(data);
@@ -101,7 +96,7 @@ public class RedisMQPullTask implements CommandLineRunner {
                 objects.add(obj);
                 obj = redisMQTemplate.opsForList().leftPop(key);
             }
-            if (!Objects.isNull(obj)){
+            if (!Objects.isNull(obj)) {
                 objects.add(obj);
             }
         }

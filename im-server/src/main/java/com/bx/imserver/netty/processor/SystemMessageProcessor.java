@@ -13,10 +13,7 @@ import com.bx.imcommon.mq.RedisMQTemplate;
 import com.bx.imcommon.util.ThreadPoolExecutorFactory;
 import com.bx.imserver.netty.UserChannelCtxMap;
 import io.netty.channel.ChannelHandlerContext;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,11 +22,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class SystemMessageProcessor extends AbstractMessageProcessor<IMRecvInfo> {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SystemMessageProcessor.class);
     private final RedisMQTemplate redisMQTemplate;
     private final ScheduledThreadPoolExecutor EXECUTOR = ThreadPoolExecutorFactory.getThreadPoolExecutor();
 
@@ -42,8 +37,7 @@ public class SystemMessageProcessor extends AbstractMessageProcessor<IMRecvInfo>
         List<PushTask> pushTasks = new ArrayList<>(receivers.size());
         for (IMUserInfo receiver : receivers) {
             try {
-                ChannelHandlerContext channelCtx =
-                    UserChannelCtxMap.getChannelCtx(receiver.getId(), receiver.getTerminal());
+                ChannelHandlerContext channelCtx = UserChannelCtxMap.getChannelCtx(receiver.getId(), receiver.getTerminal());
                 if (!Objects.isNull(channelCtx)) {
                     IMSendInfo<Object> sendInfo = new IMSendInfo<>();
                     sendInfo.setCmd(IMCmdType.SYSTEM_MESSAGE.code());
@@ -106,5 +100,9 @@ public class SystemMessageProcessor extends AbstractMessageProcessor<IMRecvInfo>
                 redisMQTemplate.opsForList().rightPush(key, result);
             });
         }
+    }
+
+    public SystemMessageProcessor(final RedisMQTemplate redisMQTemplate) {
+        this.redisMQTemplate = redisMQTemplate;
     }
 }

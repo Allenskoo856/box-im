@@ -10,20 +10,16 @@ import com.bx.imserver.netty.UserChannelCtxMap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import java.util.Objects;
 
 /**
  * @author Blue
  * @version 1.0
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class ForceLogoutProcessor extends AbstractMessageProcessor<IMForceLogoutInfo> {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ForceLogoutProcessor.class);
 
     @Override
     public void process(IMForceLogoutInfo info) {
@@ -43,5 +39,8 @@ public class ForceLogoutProcessor extends AbstractMessageProcessor<IMForceLogout
             context.channel().writeAndFlush(sendInfo).addListener(ChannelFutureListener.CLOSE);
             log.info("强制下线,userId:{},终端:{},type:{}", info.getUserId(), info.getTerminal(), info.getType());
         }
+    }
+
+    public ForceLogoutProcessor() {
     }
 }

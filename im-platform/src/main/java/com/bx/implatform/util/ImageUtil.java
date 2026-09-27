@@ -1,14 +1,11 @@
 package com.bx.implatform.util;
 
-import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-@Slf4j
 public final class ImageUtil {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ImageUtil.class);
     //以下是常量,按照阿里代码开发规范,不允许代码中出现魔法值
     private static final Integer ZERO = 0;
     private static final Integer ONE_ZERO_TWO_FOUR = 1024;
@@ -37,20 +34,15 @@ public final class ImageUtil {
             while (imageBytes.length > desFileSize * ONE_ZERO_TWO_FOUR) {
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(imageBytes);
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream(imageBytes.length);
-                Thumbnails.of(inputStream)
-                        .scale(accuracy)
-                        .outputQuality(accuracy)
-                        .toOutputStream(outputStream);
+                Thumbnails.of(inputStream).scale(accuracy).outputQuality(accuracy).toOutputStream(outputStream);
                 imageBytes = outputStream.toByteArray();
             }
-            log.info("图片原大小={}kb | 压缩后大小={}kb",
-                    srcSize / ONE_ZERO_TWO_FOUR, imageBytes.length / ONE_ZERO_TWO_FOUR);
+            log.info("图片原大小={}kb | 压缩后大小={}kb", srcSize / ONE_ZERO_TWO_FOUR, imageBytes.length / ONE_ZERO_TWO_FOUR);
         } catch (Exception e) {
             log.error("【图片压缩】msg=图片压缩失败!", e);
         }
         return imageBytes;
     }
-
 
     /**
      * 自动调节精度(经验数值)
@@ -71,8 +63,4 @@ public final class ImageUtil {
         }
         return accuracy;
     }
-
 }
-
-
-

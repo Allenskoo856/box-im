@@ -13,17 +13,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Tag(name = "私聊消息")
 @RestController
 @RequestMapping("/message/private")
-@RequiredArgsConstructor
 public class PrivateMessageController {
-
     private final PrivateMessageService privateMessageService;
 
     @PostMapping("/send")
@@ -35,23 +31,21 @@ public class PrivateMessageController {
     @DeleteMapping("/recall/{id}")
     @Operation(summary = "撤回消息", description = "撤回私聊消息")
     public Result<PrivateMessageVO> recallMessage(@NotNull(message = "消息id不能为空") @PathVariable Long id) {
-        return ResultUtils.success( privateMessageService.recallMessage(id));
+        return ResultUtils.success(privateMessageService.recallMessage(id));
     }
 
-    @GetMapping(value = "/loadOfflineMessage")
+    @GetMapping("/loadOfflineMessage")
     @Operation(summary = "拉取离线消息", description = "拉取离线消息")
     public Result<List<PrivateMessageVO>> loadOfflineMessage(@RequestParam Long minId) {
         return ResultUtils.success(privateMessageService.loadOfflineMessage(minId));
     }
 
-
     @PutMapping("/readed")
     @Operation(summary = "消息已读", description = "将会话中接收的消息状态置为已读")
-    public Result readedMessage(@RequestParam Long friendId,@RequestParam(required = false) Long messageId) {
-        privateMessageService.readedMessage(friendId,messageId);
+    public Result readedMessage(@RequestParam Long friendId, @RequestParam(required = false) Long messageId) {
+        privateMessageService.readedMessage(friendId, messageId);
         return ResultUtils.success();
     }
-
 
     @GetMapping("/maxReadedId")
     @Operation(summary = "获取最大已读消息的id", description = "获取某个会话中已读消息的最大id")
@@ -59,7 +53,6 @@ public class PrivateMessageController {
         Long userId = SessionContext.getSession().getUserId();
         return ResultUtils.success(privateMessageService.getMaxReadedId(userId, friendId));
     }
-
 
     @DeleteMapping("/deleteMessage")
     @Operation(summary = "删除消息", description = "根据消息id列表删除消息")
@@ -81,5 +74,7 @@ public class PrivateMessageController {
         return ResultUtils.success(privateMessageService.loadHistoryMessage(dto));
     }
 
+    public PrivateMessageController(final PrivateMessageService privateMessageService) {
+        this.privateMessageService = privateMessageService;
+    }
 }
-

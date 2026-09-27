@@ -5,22 +5,17 @@ import com.bx.implatform.result.ResultUtils;
 import com.bx.implatform.service.WebrtcPrivateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "单人通话")
 @RestController
 @RequestMapping("/webrtc/private")
-@RequiredArgsConstructor
 public class WebrtcPrivateController {
-
     private final WebrtcPrivateService webrtcPrivateService;
-
 
     @Operation(summary = "呼叫视频通话")
     @PostMapping("/call")
-    public Result call(@RequestParam Long uid, @RequestParam(defaultValue = "video") String mode,
-        @RequestBody String offer) {
+    public Result call(@RequestParam Long uid, @RequestParam(defaultValue = "video") String mode, @RequestBody String offer) {
         webrtcPrivateService.call(uid, mode, offer);
         return ResultUtils.success();
     }
@@ -72,5 +67,9 @@ public class WebrtcPrivateController {
     public Result heartbeat(@RequestParam Long uid) {
         webrtcPrivateService.heartbeat(uid);
         return ResultUtils.success();
+    }
+
+    public WebrtcPrivateController(final WebrtcPrivateService webrtcPrivateService) {
+        this.webrtcPrivateService = webrtcPrivateService;
     }
 }

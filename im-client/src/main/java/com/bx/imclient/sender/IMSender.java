@@ -9,23 +9,17 @@ import com.bx.imcommon.enums.IMSendCode;
 import com.bx.imcommon.enums.IMTerminalType;
 import com.bx.imcommon.model.*;
 import com.bx.imcommon.mq.RedisMQTemplate;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.util.*;
 
 @Service
-@RequiredArgsConstructor
 public class IMSender {
-
     @Autowired
     private RedisMQTemplate redisMQTemplate;
-
     @Value("${spring.application.name}")
     private String appName;
-
     private final MessageListenerMulticaster listenerMulticaster;
 
     public <T> void sendSystemMessage(IMSystemMessage<T> message) {
@@ -44,7 +38,7 @@ public class IMSender {
         List<IMUserInfo> offLineUsers = new LinkedList<>();
         int idx = 0;
         for (Map.Entry<String, IMUserInfo> entry : sendMap.entrySet()) {
-            Integer serverId = (Integer)serverIds.get(idx++);
+            Integer serverId = (Integer) serverIds.get(idx++);
             if (!Objects.isNull(serverId)) {
                 List<IMUserInfo> list = serverMap.computeIfAbsent(serverId, o -> new LinkedList<>());
                 list.add(entry.getValue());
@@ -134,7 +128,7 @@ public class IMSender {
             Map<Integer, List<IMUserInfo>> serverMap = new HashMap<>(16);
             int idx = 0;
             for (Map.Entry<String, IMUserInfo> entry : recvKeyToUser.entrySet()) {
-                Integer serverId = (Integer)serverIds.get(idx++);
+                Integer serverId = (Integer) serverIds.get(idx++);
                 if (serverId != null) {
                     serverMap.computeIfAbsent(serverId, k -> new ArrayList<>()).add(entry.getValue());
                 } else {
@@ -142,15 +136,14 @@ public class IMSender {
                 }
             }
             for (Map.Entry<Integer, List<IMUserInfo>> entry : serverMap.entrySet()) {
-                pushPrivateMessage(entry.getKey(), sender, entry.getValue(), message.getSendResult(),
-                        message.getData());
+                pushPrivateMessage(entry.getKey(), sender, entry.getValue(), message.getSendResult(), message.getData());
             }
         }
         // 自己的其它终端在线则入队；sendResult 固定 false，与单条私聊「同步给自己」行为一致
         if (!selfKeys.isEmpty()) {
             Long senderId = sender.getId();
             for (int i = 0; i < selfKeys.size(); i++) {
-                Integer serverId = (Integer)serverIds.get(recvKeyCount + i);
+                Integer serverId = (Integer) serverIds.get(recvKeyCount + i);
                 if (serverId != null) {
                     List<IMUserInfo> receivers = List.of(new IMUserInfo(senderId, selfOtherTerminals.get(i)));
                     pushPrivateMessage(serverId, sender, receivers, false, message.getData());
@@ -214,7 +207,7 @@ public class IMSender {
             Map<Integer, List<IMUserInfo>> serverMap = new HashMap<>(16);
             int idx = 0;
             for (Map.Entry<String, IMUserInfo> entry : recvKeyToUser.entrySet()) {
-                Integer serverId = (Integer)serverIds.get(idx++);
+                Integer serverId = (Integer) serverIds.get(idx++);
                 if (serverId != null) {
                     serverMap.computeIfAbsent(serverId, k -> new ArrayList<>()).add(entry.getValue());
                 } else {
@@ -232,7 +225,7 @@ public class IMSender {
             Long senderId = sender.getId();
             for (int i = 0; i < selfKeys.size(); i++) {
                 // 获取终端连接的channelId
-                Integer serverId = (Integer)serverIds.get(recvKeyCount + i);
+                Integer serverId = (Integer) serverIds.get(recvKeyCount + i);
                 // 如果终端在线，将数据存储至redis，等待拉取推送
                 if (serverId != null) {
                     // 自己的消息不需要回推消息结果
@@ -328,9 +321,10 @@ public class IMSender {
         }
     }
 
-    /** 封装私聊 {@link IMRecvInfo} 并入对应 IM-server 的 Redis 私聊队列 */
-    private <T> void pushPrivateMessage(Integer serverId, IMUserInfo sender, List<IMUserInfo> receivers,
-                                        Boolean sendResult, T data) {
+    /**
+     * 封装私聊 {@link IMRecvInfo} 并入对应 IM-server 的 Redis 私聊队列
+     */
+    private <T> void pushPrivateMessage(Integer serverId, IMUserInfo sender, List<IMUserInfo> receivers, Boolean sendResult, T data) {
         IMRecvInfo recvInfo = new IMRecvInfo();
         recvInfo.setCmd(IMCmdType.PRIVATE_MESSAGE.code());
         recvInfo.setSender(sender);
@@ -342,9 +336,10 @@ public class IMSender {
         redisMQTemplate.opsForList().rightPush(queueKey, recvInfo);
     }
 
-    /** 封装群聊 {@link IMRecvInfo} 并入对应 IM-server 的 Redis 群聊队列 */
-    private <T> void pushGroupMessage(Integer serverId, IMUserInfo sender, List<IMUserInfo> receivers,
-                                      Boolean sendResult, T data) {
+    /**
+     * 封装群聊 {@link IMRecvInfo} 并入对应 IM-server 的 Redis 群聊队列
+     */
+    private <T> void pushGroupMessage(Integer serverId, IMUserInfo sender, List<IMUserInfo> receivers, Boolean sendResult, T data) {
         IMRecvInfo recvInfo = new IMRecvInfo();
         recvInfo.setCmd(IMCmdType.GROUP_MESSAGE.code());
         recvInfo.setSender(sender);
@@ -355,5 +350,9 @@ public class IMSender {
         String queueKey = String.join(":", IMRedisKey.IM_MESSAGE_GROUP_QUEUE, serverId.toString());
         // 推送至队列
         redisMQTemplate.opsForList().rightPush(queueKey, recvInfo);
+    }
+
+    public IMSender(final MessageListenerMulticaster listenerMulticaster) {
+        this.listenerMulticaster = listenerMulticaster;
     }
 }

@@ -39,8 +39,6 @@ import com.bx.implatform.session.UserSession;
 import com.bx.implatform.util.BeanUtils;
 import com.bx.implatform.util.SensitiveFilterUtil;
 import com.bx.implatform.vo.GroupMessageVO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -48,16 +46,14 @@ import org.springframework.aop.framework.AopContext;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, GroupMessage> implements GroupMessageService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GroupMessageServiceImpl.class);
     private final GroupMemberService groupMemberService;
     private final MessageDeletionService messageDeletionService;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -115,8 +111,7 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
         if (!recallMessage.getSendId().equals(session.getUserId())) {
             throw new GlobalException("这条消息不是由您发送,无法撤回");
         }
-        if (System.currentTimeMillis() - recallMessage.getSendTime()
-                .getTime() > IMConstant.ALLOW_RECALL_SECOND * 1000) {
+        if (System.currentTimeMillis() - recallMessage.getSendTime().getTime() > IMConstant.ALLOW_RECALL_SECOND * 1000) {
             throw new GlobalException("消息已发送超过5分钟，无法撤回");
         }
         // 判断是否在群里
@@ -152,8 +147,7 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
         sendMessage.setRecvIds(userIds);
         sendMessage.setData(msgInfo);
         imClient.sendGroupMessage(sendMessage);
-        log.info("撤回群聊消息，发送id:{},群聊id:{},内容:{}", session.getUserId(), message.getGroupId(),
-                message.getContent());
+        log.info("撤回群聊消息，发送id:{},群聊id:{},内容:{}", session.getUserId(), message.getGroupId(), message.getContent());
         return msgInfo;
     }
 
@@ -205,15 +199,13 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
         messages.addAll(quitMessages);
         members.addAll(quitMembers);
         // 已经删除的消息
-        List<MessageDeletion> deletions =
-                messageDeletionService.findByChatType(session.getUserId(), ChatType.GROUP.getCode());
+        List<MessageDeletion> deletions = messageDeletionService.findByChatType(session.getUserId(), ChatType.GROUP.getCode());
         // 整个会话删掉的消息就不再推送了
         messages = messages.stream().filter(m -> !isDeleteChat(m, deletions)).collect(Collectors.toList());
         // 转成map方便提取
         Map<Long, GroupMember> groupMemberMap = CollStreamUtil.toIdentityMap(members, GroupMember::getGroupId);
         // 通过群聊对消息进行分组
-        Map<Long, List<GroupMessage>> messageGroupMap =
-                messages.stream().collect(Collectors.groupingBy(GroupMessage::getGroupId));
+        Map<Long, List<GroupMessage>> messageGroupMap = messages.stream().collect(Collectors.groupingBy(GroupMessage::getGroupId));
         List<GroupMessageVO> vos = new LinkedList<>();
         for (Map.Entry<Long, List<GroupMessage>> entry : messageGroupMap.entrySet()) {
             Long groupId = entry.getKey();
@@ -248,8 +240,7 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
                 vos.add(vo);
             }
         }
-        log.info("拉取离线群聊消息,用户id:{},数量:{},耗时:{},minId:{}", session.getUserId(), vos.size(),
-                System.currentTimeMillis() - time, minId);
+        log.info("拉取离线群聊消息,用户id:{},数量:{},耗时:{},minId:{}", session.getUserId(), vos.size(), System.currentTimeMillis() - time, minId);
         // 排序
         return vos.stream().sorted(Comparator.comparing(GroupMessageVO::getId)).collect(Collectors.toList());
     }
@@ -374,8 +365,7 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
         if (CollectionUtil.isEmpty(messages)) {
             return new ArrayList<>();
         }
-        List<MessageDeletion> deletions =
-                messageDeletionService.findByChatIdAndType(session.getUserId(), ChatType.GROUP.getCode(), dto.getGroupId());
+        List<MessageDeletion> deletions = messageDeletionService.findByChatIdAndType(session.getUserId(), ChatType.GROUP.getCode(), dto.getGroupId());
         // 整个会话删掉的消息就不再推送了
         messages = messages.stream().filter(m -> !isDeleteChat(m, deletions)).collect(Collectors.toList());
         // 填充消息状态
@@ -403,12 +393,10 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
         return vos;
     }
 
-
     @Override
     public void deleteMessage(MessageDeleteDTO dto) {
         UserSession session = SessionContext.getSession();
-        messageDeletionService.deleteByMessage(session.getUserId(), ChatType.GROUP.getCode(), dto.getChatId(),
-                dto.getMessageIds());
+        messageDeletionService.deleteByMessage(session.getUserId(), ChatType.GROUP.getCode(), dto.getChatId(), dto.getMessageIds());
     }
 
     @Override
@@ -420,8 +408,7 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
             return;
         }
         // 保存删除记录
-        messageDeletionService.deleteByChat(session.getUserId(), ChatType.GROUP.getCode(), dto.getChatId(),
-                maxMessageId);
+        messageDeletionService.deleteByChat(session.getUserId(), ChatType.GROUP.getCode(), dto.getChatId(), maxMessageId);
     }
 
     /**
@@ -552,9 +539,7 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
         }
         List<String> keys = groupIds.stream().map(this::buildMaxMessageIdKey).collect(Collectors.toList());
         List<Object> maxMessageIds = redisTemplate.opsForValue().multiGet(keys);
-        maxMessageIds =
-                maxMessageIds.stream().filter(id -> !Objects.isNull(id) && Long.parseLong(id.toString()) > minId)
-                        .collect(Collectors.toList());
+        maxMessageIds = maxMessageIds.stream().filter(id -> !Objects.isNull(id) && Long.parseLong(id.toString()) > minId).collect(Collectors.toList());
         if (maxMessageIds.isEmpty()) {
             return messages;
         }
@@ -616,4 +601,12 @@ public class GroupMessageServiceImpl extends ServiceImpl<GroupMessageMapper, Gro
         return vo;
     }
 
+    public GroupMessageServiceImpl(final GroupMemberService groupMemberService, final MessageDeletionService messageDeletionService, final RedisTemplate<String, Object> redisTemplate, final IMClient imClient, final SensitiveFilterUtil sensitiveFilterUtil, final RedissonClient redissonClient) {
+        this.groupMemberService = groupMemberService;
+        this.messageDeletionService = messageDeletionService;
+        this.redisTemplate = redisTemplate;
+        this.imClient = imClient;
+        this.sensitiveFilterUtil = sensitiveFilterUtil;
+        this.redissonClient = redissonClient;
+    }
 }

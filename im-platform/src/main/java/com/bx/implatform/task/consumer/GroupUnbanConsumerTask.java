@@ -17,10 +17,7 @@ import com.bx.implatform.service.GroupMemberService;
 import com.bx.implatform.service.GroupMessageService;
 import com.bx.implatform.util.BeanUtils;
 import com.bx.implatform.vo.GroupMessageVO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import java.util.Date;
 import java.util.List;
 
@@ -29,21 +26,17 @@ import java.util.List;
  * @date: 2024-07-15
  * @version: 1.0
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 @RedisMQListener(queue = RedisKey.IM_QUEUE_GROUP_UNBAN)
 public class GroupUnbanConsumerTask extends RedisMQConsumer<GroupUnbanDTO> {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GroupUnbanConsumerTask.class);
     private final IMClient imClient;
-
     private final GroupMessageService groupMessageService;
-
     private final GroupMemberService groupMemberService;
 
     @Override
     public void onMessage(GroupUnbanDTO dto) {
-        log.info("群聊解除封禁处理,群id:{}",dto.getId());
+        log.info("群聊解除封禁处理,群id:{}", dto.getId());
         // 群聊成员列表
         List<Long> userIds = groupMemberService.findUserIdsByGroupId(dto.getId());
         // 保存消息
@@ -65,5 +58,11 @@ public class GroupUnbanConsumerTask extends RedisMQConsumer<GroupUnbanDTO> {
         sendMessage.setSendToSelf(false);
         sendMessage.setData(msgInfo);
         imClient.sendGroupMessage(sendMessage);
+    }
+
+    public GroupUnbanConsumerTask(final IMClient imClient, final GroupMessageService groupMessageService, final GroupMemberService groupMemberService) {
+        this.imClient = imClient;
+        this.groupMessageService = groupMessageService;
+        this.groupMemberService = groupMemberService;
     }
 }

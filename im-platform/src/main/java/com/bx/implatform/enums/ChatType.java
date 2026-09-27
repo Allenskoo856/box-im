@@ -1,30 +1,20 @@
 package com.bx.implatform.enums;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 会话类型枚举
  *
  * @author Blue
  * @date 2025-12-31
  */
-@Getter
-@AllArgsConstructor
 public enum ChatType {
-
     /**
      * 私聊
      */
-    PRIVATE(1, "私聊"),
-
-    /**
+    PRIVATE(1, "私聊"), /**
      * 群聊
      */
     GROUP(2, "群聊");
-
     private final Integer code;
-
     private final String desc;
 
     /**
@@ -41,5 +31,17 @@ public enum ChatType {
         }
         return null;
     }
-}
 
+    public Integer getCode() {
+        return this.code;
+    }
+
+    public String getDesc() {
+        return this.desc;
+    }
+
+    private ChatType(final Integer code, final String desc) {
+        this.code = code;
+        this.desc = desc;
+    }
+}

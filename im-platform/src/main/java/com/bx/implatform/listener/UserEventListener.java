@@ -7,9 +7,6 @@ import com.bx.imcommon.enums.IMListenerType;
 import com.bx.imcommon.model.IMUserEvent;
 import com.bx.imcommon.model.IMUserInfo;
 import com.bx.implatform.service.FriendService;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 
 /**
@@ -18,13 +15,10 @@ import java.util.List;
  * @author Blue
  * @version 1.0
  */
-@Slf4j
 @IMListener(type = IMListenerType.USER_EVENT)
-@AllArgsConstructor
 public class UserEventListener implements EventListener {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserEventListener.class);
     private final FriendService friendService;
-
 
     @Override
     public void process(List<IMUserEvent> events) {
@@ -41,5 +35,9 @@ public class UserEventListener implements EventListener {
                 log.info("用户下线,id:{},终端：{}", userInfo.getId(), userInfo.getTerminal());
             }
         }
+    }
+
+    public UserEventListener(final FriendService friendService) {
+        this.friendService = friendService;
     }
 }

@@ -30,21 +30,16 @@ import com.bx.implatform.util.SensitiveFilterUtil;
 import com.bx.implatform.vo.LoginVO;
 import com.bx.implatform.vo.OnlineTerminalVO;
 import com.bx.implatform.vo.UserVO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserServiceImpl.class);
     private final PasswordEncoder passwordEncoder;
     private final GroupMemberService groupMemberService;
     private final FriendService friendService;
@@ -60,7 +55,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new GlobalException("用户不存在");
         }
         if (user.getIsBanned()) {
-            String tip = String.format("您的账号因'%s'已被管理员封禁,请联系客服!",user.getReason());
+            String tip = String.format("您的账号因\'%s\'已被管理员封禁,请联系客服!", user.getReason());
             throw new GlobalException(tip);
         }
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
@@ -73,10 +68,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         session.setUserId(user.getId());
         session.setTerminal(dto.getTerminal());
         String strJson = JSON.toJSONString(session);
-        String accessToken = JwtUtil.sign(user.getId(), strJson, jwtProperties.getAccessTokenExpireIn(),
-            jwtProperties.getAccessTokenSecret());
-        String refreshToken = JwtUtil.sign(user.getId(), strJson, jwtProperties.getRefreshTokenExpireIn(),
-            jwtProperties.getRefreshTokenSecret());
+        String accessToken = JwtUtil.sign(user.getId(), strJson, jwtProperties.getAccessTokenExpireIn(), jwtProperties.getAccessTokenSecret());
+        String refreshToken = JwtUtil.sign(user.getId(), strJson, jwtProperties.getRefreshTokenExpireIn(), jwtProperties.getRefreshTokenSecret());
         LoginVO vo = new LoginVO();
         vo.setAccessToken(accessToken);
         vo.setAccessTokenExpiresIn(jwtProperties.getAccessTokenExpireIn());
@@ -98,15 +91,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new GlobalException("用户不存在");
         }
         if (user.getIsBanned()) {
-            String tip = String.format("您的账号因'%s'被管理员封禁,请联系客服!",user.getReason());
+            String tip = String.format("您的账号因\'%s\'被管理员封禁,请联系客服!", user.getReason());
             throw new GlobalException(tip);
         }
         // 清除残留的拒绝访问标记（解封后可能漏删）
         redisTemplate.delete(StrUtil.join(":", IMRedisKey.IM_USER_DENIED, user.getId()));
-        String accessToken =
-            JwtUtil.sign(userId, strJson, jwtProperties.getAccessTokenExpireIn(), jwtProperties.getAccessTokenSecret());
-        String newRefreshToken = JwtUtil.sign(userId, strJson, jwtProperties.getRefreshTokenExpireIn(),
-            jwtProperties.getRefreshTokenSecret());
+        String accessToken = JwtUtil.sign(userId, strJson, jwtProperties.getAccessTokenExpireIn(), jwtProperties.getAccessTokenSecret());
+        String newRefreshToken = JwtUtil.sign(userId, strJson, jwtProperties.getRefreshTokenExpireIn(), jwtProperties.getRefreshTokenSecret());
         LoginVO vo = new LoginVO();
         vo.setAccessToken(accessToken);
         vo.setAccessTokenExpiresIn(jwtProperties.getAccessTokenExpireIn());
@@ -118,14 +109,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public void register(RegisterDTO dto) {
         // 昵称默认跟用户名保持一致
-        if(StrUtil.isEmpty(dto.getNickName())){
+        if (StrUtil.isEmpty(dto.getNickName())) {
             dto.setNickName(dto.getUserName());
         }
         User user = this.findUserByUserName(dto.getUserName());
-        if(!dto.getUserName().equals(sensitiveFilterUtil.filter(dto.getUserName()))){
+        if (!dto.getUserName().equals(sensitiveFilterUtil.filter(dto.getUserName()))) {
             throw new GlobalException("用户名包含敏感字符");
         }
-        if(!dto.getNickName().equals(sensitiveFilterUtil.filter(dto.getNickName()))){
+        if (!dto.getNickName().equals(sensitiveFilterUtil.filter(dto.getNickName()))) {
             throw new GlobalException("昵称包含敏感字符");
         }
         if (!Objects.isNull(user)) {
@@ -160,7 +151,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public void update(UserVO vo) {
         UserSession session = SessionContext.getSession();
-        if(!vo.getNickName().equals(sensitiveFilterUtil.filter(vo.getNickName()))){
+        if (!vo.getNickName().equals(sensitiveFilterUtil.filter(vo.getNickName()))) {
             throw new GlobalException("昵称包含敏感字符");
         }
         if (!session.getUserId().equals(vo.getId())) {
@@ -174,16 +165,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             // 更新好友昵称和头像
             LambdaUpdateWrapper<Friend> wrapper1 = Wrappers.lambdaUpdate();
             wrapper1.eq(Friend::getFriendId, session.getUserId());
-            wrapper1.set(Friend::getFriendNickName,vo.getNickName());
-            wrapper1.set(Friend::getFriendHeadImage,vo.getHeadImageThumb());
+            wrapper1.set(Friend::getFriendNickName, vo.getNickName());
+            wrapper1.set(Friend::getFriendHeadImage, vo.getHeadImageThumb());
             wrapper1.set(Friend::getVersion, friendService.getNextVersion());
             friendService.update(wrapper1);
             // 更新群聊中的昵称和头像
             LambdaUpdateWrapper<GroupMember> wrapper2 = Wrappers.lambdaUpdate();
             wrapper2.eq(GroupMember::getUserId, session.getUserId());
-            wrapper2.set(GroupMember::getHeadImage,vo.getHeadImageThumb());
-            wrapper2.set(GroupMember::getUserNickName,vo.getNickName());
-            wrapper2.set(GroupMember::getVersion,groupMemberService.getNextVersion());
+            wrapper2.set(GroupMember::getHeadImage, vo.getHeadImageThumb());
+            wrapper2.set(GroupMember::getUserNickName, vo.getNickName());
+            wrapper2.set(GroupMember::getVersion, groupMemberService.getNextVersion());
             groupMemberService.update(wrapper2);
         }
         // 更新用户信息
@@ -230,5 +221,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             vos.add(new OnlineTerminalVO(userId, terminals));
         });
         return vos;
+    }
+
+    public UserServiceImpl(final PasswordEncoder passwordEncoder, final GroupMemberService groupMemberService, final FriendService friendService, final JwtProperties jwtProperties, final IMClient imClient, final SensitiveFilterUtil sensitiveFilterUtil, final RedisTemplate<String, Object> redisTemplate) {
+        this.passwordEncoder = passwordEncoder;
+        this.groupMemberService = groupMemberService;
+        this.friendService = friendService;
+        this.jwtProperties = jwtProperties;
+        this.imClient = imClient;
+        this.sensitiveFilterUtil = sensitiveFilterUtil;
+        this.redisTemplate = redisTemplate;
     }
 }

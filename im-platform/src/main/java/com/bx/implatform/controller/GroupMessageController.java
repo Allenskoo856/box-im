@@ -12,17 +12,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Tag(name = "群聊消息")
 @RestController
 @RequestMapping("/message/group")
-@RequiredArgsConstructor
 public class GroupMessageController {
-
     private final GroupMessageService groupMessageService;
 
     @PostMapping("/send")
@@ -37,25 +33,22 @@ public class GroupMessageController {
         return ResultUtils.success(groupMessageService.recallMessage(id));
     }
 
-
-    @GetMapping(value = "/loadOfflineMessage")
+    @GetMapping("/loadOfflineMessage")
     @Operation(summary = "拉取离线消息", description = "拉取离线消息")
     public Result<List<GroupMessageVO>> loadOfflineMessage(@RequestParam Long minId) {
         return ResultUtils.success(groupMessageService.loadOffineMessage(minId));
     }
 
-
     @PutMapping("/readed")
     @Operation(summary = "消息已读", description = "将群聊中的消息状态置为已读")
-    public Result readedMessage(@RequestParam Long groupId,@RequestParam(required = false) Long messageId) {
-        groupMessageService.readedMessage(groupId,messageId);
+    public Result readedMessage(@RequestParam Long groupId, @RequestParam(required = false) Long messageId) {
+        groupMessageService.readedMessage(groupId, messageId);
         return ResultUtils.success();
     }
 
     @GetMapping("/findReadedUsers")
     @Operation(summary = "获取已读用户id", description = "获取消息已读用户列表")
-    public Result<List<Long>> findReadedUsers(@RequestParam Long groupId,
-        @RequestParam Long messageId) {
+    public Result<List<Long>> findReadedUsers(@RequestParam Long groupId, @RequestParam Long messageId) {
         return ResultUtils.success(groupMessageService.findReadedUsers(groupId, messageId));
     }
 
@@ -73,11 +66,13 @@ public class GroupMessageController {
         return ResultUtils.success();
     }
 
-
     @PostMapping("/history")
     @Operation(summary = "查询历史消息", description = "查询历史消息")
     public Result loadHistoryMessage(@Valid @RequestBody GroupMessageHistoryDTO dto) {
         return ResultUtils.success(groupMessageService.loadHistoryMessage(dto));
     }
-}
 
+    public GroupMessageController(final GroupMessageService groupMessageService) {
+        this.groupMessageService = groupMessageService;
+    }
+}

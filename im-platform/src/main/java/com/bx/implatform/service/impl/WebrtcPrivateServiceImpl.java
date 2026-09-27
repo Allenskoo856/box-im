@@ -19,21 +19,16 @@ import com.bx.implatform.util.BeanUtils;
 import com.bx.implatform.util.ConvUtil;
 import com.bx.implatform.util.UserStateUtils;
 import com.bx.implatform.vo.PrivateMessageVO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(WebrtcPrivateServiceImpl.class);
     private final IMClient imClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final PrivateMessageService privateMessageService;
@@ -69,13 +64,11 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         userStateUtils.setBusy(session.getUserId());
         // 向对方所有终端发起呼叫
         PrivateMessageVO messageInfo = new PrivateMessageVO();
-        MessageType messageType =
-            mode.equals(WebrtcMode.VIDEO.getValue()) ? MessageType.RTC_CALL_VIDEO : MessageType.RTC_CALL_VOICE;
+        MessageType messageType = mode.equals(WebrtcMode.VIDEO.getValue()) ? MessageType.RTC_CALL_VIDEO : MessageType.RTC_CALL_VOICE;
         messageInfo.setType(messageType.code());
         messageInfo.setRecvId(uid);
         messageInfo.setSendId(session.getUserId());
         messageInfo.setContent(offer);
-
         IMPrivateMessage<PrivateMessageVO> sendMessage = new IMPrivateMessage<>();
         sendMessage.setSender(new IMUserInfo(session.getUserId(), session.getTerminal()));
         sendMessage.setRecvId(uid);
@@ -83,7 +76,6 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         sendMessage.setSendResult(false);
         sendMessage.setData(messageInfo);
         imClient.sendPrivateMessage(sendMessage);
-
     }
 
     @Override
@@ -104,7 +96,6 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         messageInfo.setRecvId(uid);
         messageInfo.setSendId(session.getUserId());
         messageInfo.setContent(answer);
-
         IMPrivateMessage<PrivateMessageVO> sendMessage = new IMPrivateMessage<>();
         sendMessage.setSender(new IMUserInfo(session.getUserId(), session.getTerminal()));
         sendMessage.setRecvId(uid);
@@ -132,7 +123,6 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         messageInfo.setType(MessageType.RTC_REJECT.code());
         messageInfo.setRecvId(uid);
         messageInfo.setSendId(session.getUserId());
-
         IMPrivateMessage<PrivateMessageVO> sendMessage = new IMPrivateMessage<>();
         sendMessage.setSender(new IMUserInfo(session.getUserId(), session.getTerminal()));
         sendMessage.setRecvId(uid);
@@ -162,7 +152,6 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         messageInfo.setType(MessageType.RTC_CANCEL.code());
         messageInfo.setRecvId(uid);
         messageInfo.setSendId(session.getUserId());
-
         IMPrivateMessage<PrivateMessageVO> sendMessage = new IMPrivateMessage<>();
         sendMessage.setSender(new IMUserInfo(session.getUserId(), session.getTerminal()));
         sendMessage.setRecvId(uid);
@@ -192,7 +181,6 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         messageInfo.setRecvId(uid);
         messageInfo.setSendId(session.getUserId());
         messageInfo.setContent(reason);
-
         IMPrivateMessage<PrivateMessageVO> sendMessage = new IMPrivateMessage<>();
         sendMessage.setSender(new IMUserInfo(session.getUserId(), session.getTerminal()));
         sendMessage.setRecvId(uid);
@@ -222,7 +210,6 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         messageInfo.setType(MessageType.RTC_HANDUP.code());
         messageInfo.setRecvId(uid);
         messageInfo.setSendId(session.getUserId());
-
         IMPrivateMessage<PrivateMessageVO> sendMessage = new IMPrivateMessage<>();
         sendMessage.setSender(new IMUserInfo(session.getUserId(), session.getTerminal()));
         sendMessage.setRecvId(uid);
@@ -248,7 +235,6 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         messageInfo.setRecvId(uid);
         messageInfo.setSendId(session.getUserId());
         messageInfo.setContent(candidate);
-
         IMPrivateMessage<PrivateMessageVO> sendMessage = new IMPrivateMessage<>();
         sendMessage.setSender(new IMUserInfo(session.getUserId(), session.getTerminal()));
         sendMessage.setRecvId(uid);
@@ -272,7 +258,7 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
 
     private WebrtcPrivateSession getWebrtcSession(Long userId, Long uid) {
         String key = getWebRtcSessionKey(userId, uid);
-        WebrtcPrivateSession webrtcSession = (WebrtcPrivateSession)redisTemplate.opsForValue().get(key);
+        WebrtcPrivateSession webrtcSession = (WebrtcPrivateSession) redisTemplate.opsForValue().get(key);
         if (webrtcSession == null) {
             throw new GlobalException("通话已结束");
         }
@@ -302,12 +288,11 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         PrivateMessage message = new PrivateMessage();
         message.setSendId(rtcSession.getCallerId());
         message.setRecvId(rtcSession.getAcceptorId());
-        message.setConvKey(ConvUtil.buildConvKey(message.getSendId(),message.getRecvId()));
+        message.setConvKey(ConvUtil.buildConvKey(message.getSendId(), message.getRecvId()));
         message.setContent(content);
         message.setSendTime(new Date());
         message.setStatus(status.code());
-        MessageType type = rtcSession.getMode().equals(WebrtcMode.VIDEO.getValue()) ? MessageType.ACT_RT_VIDEO
-            : MessageType.ACT_RT_VOICE;
+        MessageType type = rtcSession.getMode().equals(WebrtcMode.VIDEO.getValue()) ? MessageType.ACT_RT_VIDEO : MessageType.ACT_RT_VOICE;
         message.setType(type.code());
         privateMessageService.saveMessage(message);
         // 推给发起人
@@ -326,8 +311,8 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
 
     private String chatTimeText(WebrtcPrivateSession rtcSession) {
         long chatTime = (System.currentTimeMillis() - rtcSession.getChatTimeStamp()) / 1000;
-        int min = Math.abs((int)chatTime / 60);
-        int sec = Math.abs((int)chatTime % 60);
+        int min = Math.abs((int) chatTime / 60);
+        int sec = Math.abs((int) chatTime % 60);
         String strTime = min < 10 ? "0" : "";
         strTime += min;
         strTime += ":";
@@ -336,4 +321,10 @@ public class WebrtcPrivateServiceImpl implements WebrtcPrivateService {
         return strTime;
     }
 
+    public WebrtcPrivateServiceImpl(final IMClient imClient, final RedisTemplate<String, Object> redisTemplate, final PrivateMessageService privateMessageService, final UserStateUtils userStateUtils) {
+        this.imClient = imClient;
+        this.redisTemplate = redisTemplate;
+        this.privateMessageService = privateMessageService;
+        this.userStateUtils = userStateUtils;
+    }
 }

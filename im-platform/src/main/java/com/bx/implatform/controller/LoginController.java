@@ -10,14 +10,11 @@ import com.bx.implatform.vo.LoginVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "注册登录")
 @RestController
-@RequiredArgsConstructor
 public class LoginController {
-
     private final UserService userService;
 
     @PostMapping("/login")
@@ -48,4 +45,7 @@ public class LoginController {
         return ResultUtils.success();
     }
 
+    public LoginController(final UserService userService) {
+        this.userService = userService;
+    }
 }

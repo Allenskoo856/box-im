@@ -9,8 +9,7 @@
 
 - 支持私聊、群聊、离线消息、语音 / 图片 / 文件、已读未读、群 @ 等功能
 - 支持音视频通话，基于原生 WebRTC 实现，不依赖收费第三方 SDK
-- uniapp 端兼容 App、H5、微信小程序，可与 Web 端同时在线，支持消息同步
-- 后端采用 Spring Boot + Netty，网页端用 Vue，移动端用 uniapp
+- 后端采用 Spring Boot + Netty，Web 前端采用 Vue 3 + TypeScript
 - 服务器支持集群化部署，具备良好的横向扩展能力
 
 技术文档：https://www.yuque.com/u1475064/mufu2a
@@ -65,12 +64,9 @@
 | im-server | 消息推送服务，不依赖业务，负责将消息推送给用户（WS） |
 | im-client | 消息推送 SDK，其他服务可集成此 SDK 与 im-server 通信 |
 | im-common | 公共包，后端服务均依赖此包 |
-| im-web | Web 页面 |
-| im-uniapp | uniapp 页面，可打包成 App、H5、微信小程序 |
+| im-web | Web 页面（Vue 3 + Vite + Element Plus） |
 
 ## 消息推送方案
-
-当消息的发送者和接收者连的不是同一个 server 时，消息无法直接推送，因此设计了支持跨节点推送的方案：
 
 ![消息推送集群化](%E6%88%AA%E5%9B%BE/%E6%B6%88%E6%81%AF%E6%8E%A8%E9%80%81%E9%9B%86%E7%BE%A4%E5%8C%96.jpg)
 
@@ -84,9 +80,9 @@
 - Node：v18.19.0
 - JDK：17
 - Maven：3.9.6
-- MySQL：8.0（账号密码均为 `root` / `root`），创建名为 `im_platform` 的数据库，并执行 `db/im_platfrom.sql` 脚本
+- MySQL / GoldenDB：8.0 / 5.7+（创建名为 `im_platform_open` 的数据库，并手动执行 `db/init_goldendb_mysql.sql` 脚本）
 - Redis：6.2
-- MinIO：RELEASE.2024-xx，使用默认账号、密码、端口
+- 华为云 OBS：对象存储服务，使用应用配置文件中的 endpoint, ak, sk
 
 ### 2. 启动后端服务
 
@@ -101,16 +97,10 @@ java -jar ./im-server/target/im-server.jar
 ```bash
 cd im-web
 npm install
-npm run serve
+npm run dev
 ```
 
 访问 http://localhost:8080
-
-### 4. 启动 uniapp H5
-
-将 `im-uniapp` 目录导入 HBuilderX，点击菜单「运行」→「开发环境-h5」
-
-访问 http://localhost:5173
 
 ## 界面截图
 
@@ -133,12 +123,6 @@ npm run serve
 **群列表：**
 
 ![群列表](%E6%88%AA%E5%9B%BE/web/%E7%BE%A4%E5%88%97%E8%A1%A8.jpg)
-
-**移动端 App：**
-
-![移动端App1](%E6%88%AA%E5%9B%BE/app/1.png)
-
-![移动端App2](%E6%88%AA%E5%9B%BE/app/2.png)
 
 ## 加入交流群
 

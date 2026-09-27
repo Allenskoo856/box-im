@@ -6,15 +6,12 @@ import com.bx.imcommon.model.IMRecvInfo;
 import com.bx.imcommon.mq.RedisMQListener;
 import com.bx.imserver.netty.processor.AbstractMessageProcessor;
 import com.bx.imserver.netty.processor.ProcessorFactory;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 @RedisMQListener(queue = IMRedisKey.IM_MESSAGE_PRIVATE_QUEUE, batchSize = 100, period = 10)
 public class PullPrivateMessageTask extends AbstractPullMessageTask<IMRecvInfo> {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PullPrivateMessageTask.class);
 
     @Override
     public void onMessage(IMRecvInfo recvInfo) {
@@ -22,4 +19,6 @@ public class PullPrivateMessageTask extends AbstractPullMessageTask<IMRecvInfo> 
         processor.process(recvInfo);
     }
 
+    public PullPrivateMessageTask() {
+    }
 }

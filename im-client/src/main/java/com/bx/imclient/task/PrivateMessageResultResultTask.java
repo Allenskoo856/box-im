@@ -5,17 +5,12 @@ import com.bx.imcommon.contant.IMRedisKey;
 import com.bx.imcommon.enums.IMListenerType;
 import com.bx.imcommon.model.IMBatchSendResult;
 import com.bx.imcommon.mq.RedisMQListener;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
-
 @Component
-@RequiredArgsConstructor
 @RedisMQListener(queue = IMRedisKey.IM_RESULT_PRIVATE_QUEUE, batchSize = 100)
 public class PrivateMessageResultResultTask extends AbstractMessageResultTask<IMBatchSendResult> {
-
     private final MessageListenerMulticaster listenerMulticaster;
 
     @Override
@@ -23,4 +18,7 @@ public class PrivateMessageResultResultTask extends AbstractMessageResultTask<IM
         listenerMulticaster.multicast(IMListenerType.PRIVATE_MESSAGE, batchResults);
     }
 
+    public PrivateMessageResultResultTask(final MessageListenerMulticaster listenerMulticaster) {
+        this.listenerMulticaster = listenerMulticaster;
+    }
 }

@@ -11,24 +11,19 @@ import com.bx.implatform.exception.GlobalException;
 import com.bx.implatform.session.UserSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-@Slf4j
 @Component
-@AllArgsConstructor
 public class AuthInterceptor implements HandlerInterceptor {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuthInterceptor.class);
     private final JwtProperties jwtProperties;
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
-    public boolean preHandle(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         //如果不是映射到方法直接通过
         if (!(handler instanceof HandlerMethod)) {
             return true;
@@ -57,5 +52,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         // 存放session
         request.setAttribute("session", userSession);
         return true;
+    }
+
+    public AuthInterceptor(final JwtProperties jwtProperties, final RedisTemplate<String, Object> redisTemplate) {
+        this.jwtProperties = jwtProperties;
+        this.redisTemplate = redisTemplate;
     }
 }

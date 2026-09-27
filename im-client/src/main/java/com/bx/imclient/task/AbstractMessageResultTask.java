@@ -2,12 +2,10 @@ package com.bx.imclient.task;
 
 import cn.hutool.core.util.StrUtil;
 import com.bx.imcommon.mq.RedisMQConsumer;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
-@Slf4j
 public abstract class AbstractMessageResultTask<T> extends RedisMQConsumer<T> {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AbstractMessageResultTask.class);
     @Value("${spring.application.name}")
     private String appName;
 
@@ -15,7 +13,4 @@ public abstract class AbstractMessageResultTask<T> extends RedisMQConsumer<T> {
     public String generateKey() {
         return StrUtil.join(":", super.generateKey(), appName);
     }
-
-
-
 }

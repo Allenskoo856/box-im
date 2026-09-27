@@ -9,23 +9,19 @@ import com.bx.implatform.contant.RedisKey;
 import com.bx.implatform.entity.GroupMember;
 import com.bx.implatform.mapper.GroupMemberMapper;
 import com.bx.implatform.service.GroupMemberService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @CacheConfig(cacheNames = RedisKey.IM_CACHE_GROUP_MEMBER_ID)
 public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, GroupMember> implements GroupMemberService {
-
     private final RedisTemplate<String, Object> redisTemplate;
 
     @CacheEvict(key = "#member.getGroupId()")
@@ -57,7 +53,6 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         return this.list(memberWrapper);
     }
 
-
     @Override
     public List<GroupMember> findByGroupAndUserIds(Long groupId, List<Long> userIds) {
         LambdaQueryWrapper<GroupMember> wrapper = Wrappers.lambdaQuery();
@@ -87,8 +82,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     @Override
     public List<Long> findUserIdsByGroupId(Long groupId) {
         LambdaQueryWrapper<GroupMember> memberWrapper = Wrappers.lambdaQuery();
-        memberWrapper.eq(GroupMember::getGroupId, groupId).eq(GroupMember::getQuit, false)
-            .select(GroupMember::getUserId);
+        memberWrapper.eq(GroupMember::getGroupId, groupId).eq(GroupMember::getQuit, false).select(GroupMember::getUserId);
         List<GroupMember> members = this.list(memberWrapper);
         return members.stream().map(GroupMember::getUserId).collect(Collectors.toList());
     }
@@ -189,5 +183,9 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             redisTemplate.opsForValue().set(key, version);
             return version;
         }
+    }
+
+    public GroupMemberServiceImpl(final RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
     }
 }

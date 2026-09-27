@@ -4,7 +4,6 @@ import cn.hutool.json.JSONException;
 import com.bx.implatform.enums.ResultCode;
 import com.bx.implatform.result.Result;
 import com.bx.implatform.result.ResultUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
@@ -15,22 +14,21 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-
 import java.lang.reflect.UndeclaredThrowableException;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @ControllerAdvice
 @ResponseBody
-@Slf4j
 public class GlobalExceptionHandler {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(value = Exception.class)
+    @ExceptionHandler(Exception.class)
     public Result handleException(Exception e) {
         if (e instanceof GlobalException) {
             GlobalException ex = (GlobalException) e;
             // token过期是正常情况,不打印
-            if(!ex.getCode().equals(ResultCode.INVALID_TOKEN.getCode())){
+            if (!ex.getCode().equals(ResultCode.INVALID_TOKEN.getCode())) {
                 log.error("全局异常捕获:msg:{},log:{},{}", ex.getMessage(), e);
             }
             return ResultUtils.error(ex.getCode(), ex.getMessage());
@@ -44,11 +42,10 @@ public class GlobalExceptionHandler {
         }
     }
 
-
     /**
      * 数据解析错误
-     **/
-    @ExceptionHandler(value = HttpMessageNotReadableException.class)
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
     public Result handleMessageNotReadableException(HttpMessageNotReadableException e) {
         log.error("全局异常捕获:msg:{}", e.getMessage());
         Throwable t = e.getCause();
@@ -68,7 +65,7 @@ public class GlobalExceptionHandler {
      * @param exception
      * @return
      */
-    @ExceptionHandler(value = {MethodArgumentNotValidException.class})
+    @ExceptionHandler({MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.OK)
     public Result handleValidationExceptionHandler(MethodArgumentNotValidException exception) {
         BindingResult bindResult = exception.getBindingResult();
@@ -84,7 +81,6 @@ public class GlobalExceptionHandler {
         return ResultUtils.error(ResultCode.PROGRAM_ERROR, msg);
     }
 
-
     @ExceptionHandler(BindException.class)
     @ResponseStatus(HttpStatus.OK)
     public Result handleBindException(BindException e) {
@@ -96,5 +92,4 @@ public class GlobalExceptionHandler {
         String errorMsg = error.getDefaultMessage();
         return ResultUtils.error(ResultCode.PROGRAM_ERROR, errorMsg);
     }
-
 }

@@ -4,17 +4,14 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.bx.implatform.annotation.RedisLock;
-import com.bx.implatform.config.props.MinioProperties;
+import com.bx.implatform.config.props.ObsProperties;
 import com.bx.implatform.contant.RedisKey;
 import com.bx.implatform.entity.FileInfo;
 import com.bx.implatform.service.FileService;
-import com.bx.implatform.thirdparty.MinioService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.bx.implatform.thirdparty.ObsService;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import java.util.Date;
 import java.util.List;
 
@@ -24,14 +21,12 @@ import java.util.List;
  * @author Blue
  * @version 1.0
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class FileExpireTask {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FileExpireTask.class);
     private final FileService fileService;
-    private final MinioService minioService;
-    private final MinioProperties minioProps;
+    private final ObsService obsService;
+    private final ObsProperties obsProps;
 
     @RedisLock(prefixKey = RedisKey.IM_LOCK_FILE_TASK)
     @Scheduled(cron = "0 0 3 * * ?")
@@ -42,13 +37,16 @@ public class FileExpireTask {
         while (true) {
             for (FileInfo fileInfo : files) {
                 String url = fileInfo.getFilePath();
-                String relativePath = url.substring(fileInfo.getFilePath().indexOf(minioProps.getBucketName()));
+                if (!url.contains(obsProps.getBucketName())) {
+                    continue;
+                }
+                String relativePath = url.substring(fileInfo.getFilePath().indexOf(obsProps.getBucketName()));
                 String[] arr = relativePath.split("/");
-                String bucket = minioProps.getBucketName();
+                String bucket = obsProps.getBucketName();
                 String path = arr[1];
                 String fileNme = StrUtil.join("/", arr[2], arr[3]);
-                if (minioService.isExist(bucket, path, fileNme)) {
-                    if (!minioService.remove(bucket, path, fileNme)) {
+                if (obsService.isExist(bucket, path, fileNme)) {
+                    if (!obsService.remove(bucket, path, fileNme)) {
                         // 删除失败，不再往下执行
                         log.error("删除过期文件异常, id:{},文件名:{}", fileInfo.getId(), fileInfo.getFileName());
                         return;
@@ -66,7 +64,7 @@ public class FileExpireTask {
     }
 
     List<FileInfo> loadBatch(int size) {
-        Date minDate = DateUtils.addDays(new Date(), -minioProps.getExpireIn());
+        Date minDate = DateUtils.addDays(new Date(), -obsProps.getExpireIn());
         LambdaQueryWrapper<FileInfo> wrapper = Wrappers.lambdaQuery();
         wrapper.eq(FileInfo::getIsPermanent, false);
         wrapper.le(FileInfo::getUploadTime, minDate);
@@ -75,4 +73,9 @@ public class FileExpireTask {
         return fileService.list(wrapper);
     }
 
+    public FileExpireTask(final FileService fileService, final ObsService obsService, final ObsProperties obsProps) {
+        this.fileService = fileService;
+        this.obsService = obsService;
+        this.obsProps = obsProps;
+    }
 }

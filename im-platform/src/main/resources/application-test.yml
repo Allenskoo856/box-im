@@ -10,11 +10,11 @@ spring:
       port: 6379
       password: PmEpfRjpBnTN6CgW
 
-minio:
-  endpoint: http://127.0.0.1:9001 #内网地址
-  domain: https://www.boxim.online/file  #外网访问地址
-  accessKey: admin
-  secretKey: 3fBSt6AkgFuD77D6
+obs:
+  endpoint: https://obs.cn-north-4.myhuaweicloud.com # 华为云OBS终端节点
+  domain: https://www.boxim.online/file  # 外网访问地址
+  accessKey: your-obs-ak
+  secretKey: your-obs-sk
   bucketName: box-im
   imagePath: image
   filePath: file

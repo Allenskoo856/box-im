@@ -29,9 +29,6 @@ import com.bx.implatform.util.BeanUtils;
 import com.bx.implatform.vo.GroupMemberVO;
 import com.bx.implatform.vo.GroupMessageVO;
 import com.bx.implatform.vo.GroupVO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
@@ -41,15 +38,13 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 @CacheConfig(cacheNames = RedisKey.IM_CACHE_GROUP)
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements GroupService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GroupServiceImpl.class);
     private final UserService userService;
     private final GroupMemberService groupMemberService;
     private final FriendService friendsService;
@@ -64,8 +59,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     public GroupVO newGroup(GroupNewDTO dto) {
         UserSession session = SessionContext.getSession();
         User user = userService.getById(session.getUserId());
-        List<Long> userIds = dto.getUserIds().stream().distinct()
-            .filter(id -> !id.equals(session.getUserId())).collect(Collectors.toList());
+        List<Long> userIds = dto.getUserIds().stream().distinct().filter(id -> !id.equals(session.getUserId())).collect(Collectors.toList());
         if (userIds.isEmpty()) {
             throw new GlobalException("请至少选择1位好友");
         }
@@ -102,7 +96,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
             groupMemberService.saveOrUpdateBatch(group.getId(), invitedMembers);
         }
         GroupVO ownerVo = findById(group.getId());
-        sendAddGroupMessage(ownerVo, Lists.newArrayList(), true);
+        sendAddGroupMessage(ownerVo, new ArrayList<>(), true);
         for (GroupMember groupMember : invitedMembers) {
             GroupVO groupVo = convert(group, groupMember);
             sendAddGroupMessage(groupVo, List.of(groupMember.getUserId()), false);
@@ -171,7 +165,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         // 群聊用户id
         List<Long> userIds = groupMemberService.findUserIdsByGroupId(groupId);
         // 先发解散提示，再退群，保证离线可拉取到提示语
-        String content = String.format("'%s'解散了群聊", session.getNickName());
+        String content = String.format("\'%s\'解散了群聊", session.getNickName());
         this.sendTipMessage(groupId, userIds, content);
         // 逻辑删除群数据
         group.setDissolve(true);
@@ -251,10 +245,10 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
             throw new GlobalException("群组不存在");
         }
         if (group.getDissolve()) {
-            throw new GlobalException("群组'" + group.getName() + "'已解散");
+            throw new GlobalException("群组\'" + group.getName() + "\'已解散");
         }
         if (group.getIsBanned()) {
-            throw new GlobalException("群组'" + group.getName() + "'已被封禁,原因:" + group.getReason());
+            throw new GlobalException("群组\'" + group.getName() + "\'已被封禁,原因:" + group.getReason());
         }
         return group;
     }
@@ -311,8 +305,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         }
         // 批量保存成员数据
         List<GroupMember> groupMembers = friends.stream().map(f -> {
-            Optional<GroupMember> optional =
-                members.stream().filter(m -> m.getUserId().equals(f.getFriendId())).findFirst();
+            Optional<GroupMember> optional = members.stream().filter(m -> m.getUserId().equals(f.getFriendId())).findFirst();
             GroupMember groupMember = optional.orElseGet(GroupMember::new);
             groupMember.setGroupId(dto.getGroupId());
             groupMember.setUserId(f.getFriendId());
@@ -335,8 +328,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         String memberNames = groupMembers.stream().map(GroupMember::getShowNickName).collect(Collectors.joining(","));
         String content = String.format(" %s 邀请 %s 加入了群聊", session.getNickName(), memberNames);
         this.sendTipMessage(dto.getGroupId(), userIds, content);
-        log.info("邀请进入群聊，群聊id:{},群聊名称:{},被邀请用户id:{}", group.getId(), group.getName(),
-            dto.getFriendIds());
+        log.info("邀请进入群聊，群聊id:{},群聊名称:{},被邀请用户id:{}", group.getId(), group.getName(), dto.getFriendIds());
     }
 
     @Override
@@ -344,14 +336,14 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         Group group = getById(groupId);
         List<GroupMember> members = groupMemberService.findByGroupId(groupId, version);
         List<Long> userIds = members.stream().map(GroupMember::getUserId).collect(Collectors.toList());
-        return members.stream().map(m -> {
+        return 
+        // 优先使用好友备注昵称
+        members.stream().map(m -> {
             GroupMemberVO vo = BeanUtils.copyProperties(m, GroupMemberVO.class);
-            // 优先使用好友备注昵称
             vo.setShowGroupName(StrUtil.blankToDefault(m.getRemarkGroupName(), group.getName()));
             return vo;
         }).collect(Collectors.toList());
     }
-
 
     @Override
     public List<Long> findOnlineMemberIds(Long groupId) {
@@ -480,5 +472,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         sendMessage.setData(msgInfo);
         sendMessage.setSendResult(false);
         imClient.sendGroupMessage(sendMessage);
+    }
+
+    public GroupServiceImpl(final UserService userService, final GroupMemberService groupMemberService, final FriendService friendsService, final IMClient imClient, final RedisTemplate<String, Object> redisTemplate) {
+        this.userService = userService;
+        this.groupMemberService = groupMemberService;
+        this.friendsService = friendsService;
+        this.imClient = imClient;
+        this.redisTemplate = redisTemplate;
     }
 }

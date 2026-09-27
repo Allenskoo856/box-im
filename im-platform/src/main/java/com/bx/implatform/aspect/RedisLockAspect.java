@@ -2,8 +2,6 @@ package com.bx.implatform.aspect;
 
 import cn.hutool.core.util.StrUtil;
 import com.bx.implatform.annotation.RedisLock;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -19,7 +17,6 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
-
 import java.lang.reflect.Method;
 import java.util.Objects;
 
@@ -28,17 +25,13 @@ import java.util.Objects;
  * @date: 2024-06-09
  * @version: 1.0
  */
-
-@Slf4j
 @Aspect
 @Order(0)
 @Component
-@RequiredArgsConstructor
 public class RedisLockAspect {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RedisLockAspect.class);
     private ExpressionParser parser = new SpelExpressionParser();
     private DefaultParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
-
     private final RedissonClient redissonClient;
 
     @Around("@annotation(com.bx.implatform.annotation.RedisLock)")
@@ -47,30 +40,30 @@ public class RedisLockAspect {
         RedisLock annotation = method.getAnnotation(RedisLock.class);
         // 解析表达式中的key
         String key = parseKey(joinPoint);
-        String lockKey = StrUtil.join(":",annotation.prefixKey(),key);
+        String lockKey = StrUtil.join(":", annotation.prefixKey(), key);
         // 上锁
         RLock lock = redissonClient.getLock(lockKey);
-        lock.lock(annotation.waitTime(),annotation.unit());
+        lock.lock(annotation.waitTime(), annotation.unit());
         try {
             // 执行方法
             return joinPoint.proceed();
-        }finally {
+        } finally {
             lock.unlock();
         }
     }
 
-    private String parseKey(ProceedingJoinPoint joinPoint){
+    private String parseKey(ProceedingJoinPoint joinPoint) {
         Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
         RedisLock annotation = method.getAnnotation(RedisLock.class);
         String key = annotation.key();
-        if(StrUtil.isEmpty(key)){
+        if (StrUtil.isEmpty(key)) {
             return Strings.EMPTY;
         }
         // el解析需要的上下文对象
         EvaluationContext context = new StandardEvaluationContext();
         // 参数名
         String[] params = parameterNameDiscoverer.getParameterNames(method);
-        if(Objects.isNull(params)){
+        if (Objects.isNull(params)) {
             return key;
         }
         Object[] args = joinPoint.getArgs();
@@ -81,5 +74,7 @@ public class RedisLockAspect {
         return expression.getValue(context, String.class);
     }
 
-
+    public RedisLockAspect(final RedissonClient redissonClient) {
+        this.redissonClient = redissonClient;
+    }
 }

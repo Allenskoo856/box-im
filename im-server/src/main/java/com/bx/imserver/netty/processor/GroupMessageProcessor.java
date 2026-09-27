@@ -13,10 +13,7 @@ import com.bx.imcommon.mq.RedisMQTemplate;
 import com.bx.imcommon.util.ThreadPoolExecutorFactory;
 import com.bx.imserver.netty.UserChannelCtxMap;
 import io.netty.channel.ChannelHandlerContext;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,11 +22,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class GroupMessageProcessor extends AbstractMessageProcessor<IMRecvInfo> {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GroupMessageProcessor.class);
     private final RedisMQTemplate redisMQTemplate;
     private final ScheduledThreadPoolExecutor EXECUTOR = ThreadPoolExecutorFactory.getThreadPoolExecutor();
 
@@ -43,8 +38,7 @@ public class GroupMessageProcessor extends AbstractMessageProcessor<IMRecvInfo> 
         List<PushTask> pushTasks = new ArrayList<>(receivers.size());
         for (IMUserInfo receiver : receivers) {
             try {
-                ChannelHandlerContext channelCtx =
-                    UserChannelCtxMap.getChannelCtx(receiver.getId(), receiver.getTerminal());
+                ChannelHandlerContext channelCtx = UserChannelCtxMap.getChannelCtx(receiver.getId(), receiver.getTerminal());
                 if (!Objects.isNull(channelCtx)) {
                     IMSendInfo<Object> sendInfo = new IMSendInfo<>();
                     sendInfo.setCmd(IMCmdType.GROUP_MESSAGE.code());
@@ -52,13 +46,11 @@ public class GroupMessageProcessor extends AbstractMessageProcessor<IMRecvInfo> 
                     pushTasks.add(new PushTask(receiver, channelCtx.channel().writeAndFlush(sendInfo)));
                 } else {
                     noChannelReceivers.add(receiver);
-                    log.error("未找到channel,发送者:{},接收id:{}，内容:{}", sender.getId(), receiver.getId(),
-                        recvInfo.getData());
+                    log.error("未找到channel,发送者:{},接收id:{}，内容:{}", sender.getId(), receiver.getId(), recvInfo.getData());
                 }
             } catch (Exception e) {
                 errorReceivers.add(receiver);
-                log.error("发送消息异常,发送者:{},接收id:{}，内容:{}", sender.getId(), receiver.getId(),
-                    recvInfo.getData(), e);
+                log.error("发送消息异常,发送者:{},接收id:{}，内容:{}", sender.getId(), receiver.getId(), recvInfo.getData(), e);
             }
         }
         sendResult(recvInfo, noChannelReceivers, IMSendCode.NOT_FIND_CHANNEL);
@@ -87,8 +79,7 @@ public class GroupMessageProcessor extends AbstractMessageProcessor<IMRecvInfo> 
                     successReceivers.add(receiver);
                 } else {
                     asyncErrorReceivers.add(receiver);
-                    log.error("消息推送失败,发送者:{},接收id:{}，内容:{}", sender.getId(), receiver.getId(),
-                        recvInfo.getData(), f.cause());
+                    log.error("消息推送失败,发送者:{},接收id:{}，内容:{}", sender.getId(), receiver.getId(), recvInfo.getData(), f.cause());
                 }
                 pendingPush.decrementAndGet();
                 tryComplete.run();
@@ -110,5 +101,9 @@ public class GroupMessageProcessor extends AbstractMessageProcessor<IMRecvInfo> 
                 redisMQTemplate.opsForList().rightPush(key, result);
             });
         }
+    }
+
+    public GroupMessageProcessor(final RedisMQTemplate redisMQTemplate) {
+        this.redisMQTemplate = redisMQTemplate;
     }
 }

@@ -6,7 +6,6 @@ import com.bx.imcommon.model.IMRecvInfo;
 import com.bx.imcommon.mq.RedisMQListener;
 import com.bx.imserver.netty.processor.AbstractMessageProcessor;
 import com.bx.imserver.netty.processor.ProcessorFactory;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,15 +13,14 @@ import org.springframework.stereotype.Component;
  * @date: 2024-07-16
  * @version: 1.0
  */
-@Slf4j
 @Component
-@RedisMQListener(queue = IMRedisKey.IM_MESSAGE_SYSTEM_QUEUE,batchSize = 10)
+@RedisMQListener(queue = IMRedisKey.IM_MESSAGE_SYSTEM_QUEUE, batchSize = 10)
 public class PullSystemMessageTask extends AbstractPullMessageTask<IMRecvInfo> {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PullSystemMessageTask.class);
 
     @Override
     public void onMessage(IMRecvInfo recvInfo) {
         AbstractMessageProcessor processor = ProcessorFactory.createProcessor(IMCmdType.SYSTEM_MESSAGE);
         processor.process(recvInfo);
     }
-
 }

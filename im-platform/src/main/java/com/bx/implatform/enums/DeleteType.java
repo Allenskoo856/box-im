@@ -1,30 +1,20 @@
 package com.bx.implatform.enums;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 消息删除类型枚举
  *
  * @author Blue
  * @date 2025-12-31
  */
-@Getter
-@AllArgsConstructor
 public enum DeleteType {
-
     /**
      * 按消息删除
      */
-    BY_MESSAGE(1, "按消息删除"),
-
-    /**
+    BY_MESSAGE(1, "按消息删除"), /**
      * 按会话删除
      */
     BY_CHAT(2, "按会话删除");
-
     private final Integer code;
-
     private final String desc;
 
     /**
@@ -41,5 +31,17 @@ public enum DeleteType {
         }
         return null;
     }
-}
 
+    public Integer getCode() {
+        return this.code;
+    }
+
+    public String getDesc() {
+        return this.desc;
+    }
+
+    private DeleteType(final Integer code, final String desc) {
+        this.code = code;
+        this.desc = desc;
+    }
+}

@@ -17,10 +17,7 @@ import com.bx.implatform.service.GroupMemberService;
 import com.bx.implatform.service.GroupMessageService;
 import com.bx.implatform.util.BeanUtils;
 import com.bx.implatform.vo.GroupMessageVO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import java.util.Date;
 import java.util.List;
 
@@ -29,16 +26,12 @@ import java.util.List;
  * @date: 2024-07-15
  * @version: 1.0
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 @RedisMQListener(queue = RedisKey.IM_QUEUE_GROUP_BANNED)
 public class GroupBannedConsumerTask extends RedisMQConsumer<GroupBanDTO> {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GroupBannedConsumerTask.class);
     private final IMClient imClient;
-
     private final GroupMessageService groupMessageService;
-
     private final GroupMemberService groupMemberService;
 
     @Override
@@ -65,5 +58,11 @@ public class GroupBannedConsumerTask extends RedisMQConsumer<GroupBanDTO> {
         sendMessage.setSendToSelf(false);
         sendMessage.setData(msgInfo);
         imClient.sendGroupMessage(sendMessage);
+    }
+
+    public GroupBannedConsumerTask(final IMClient imClient, final GroupMessageService groupMessageService, final GroupMemberService groupMemberService) {
+        this.imClient = imClient;
+        this.groupMessageService = groupMessageService;
+        this.groupMemberService = groupMemberService;
     }
 }

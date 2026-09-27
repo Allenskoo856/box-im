@@ -9,15 +9,12 @@ import com.bx.implatform.entity.MessageDeletion;
 import com.bx.implatform.enums.DeleteType;
 import com.bx.implatform.mapper.MessageDeletionMapper;
 import com.bx.implatform.service.MessageDeletionService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,14 +23,12 @@ import java.util.stream.Collectors;
  * @author Blue
  * @version 1.0
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 @CacheConfig(cacheNames = RedisKey.IM_CACHE_MESSAGE_DELETION)
-public class MessageDeletionServiceImpl extends ServiceImpl<MessageDeletionMapper, MessageDeletion>
-    implements MessageDeletionService {
+public class MessageDeletionServiceImpl extends ServiceImpl<MessageDeletionMapper, MessageDeletion> implements MessageDeletionService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MessageDeletionServiceImpl.class);
 
-    @CacheEvict(key = "#userId+':'+#chatType+':'+#chatId")
+    @CacheEvict(key = "#userId+\':\'+#chatType+\':\'+#chatId")
     @Override
     public void deleteByMessage(Long userId, Integer chatType, Long chatId, List<Long> messageIds) {
         // 过滤已经删除的消息
@@ -46,21 +41,20 @@ public class MessageDeletionServiceImpl extends ServiceImpl<MessageDeletionMappe
         List<MessageDeletion> deletions = this.list(wrapper);
         List<Long> existIds = deletions.stream().map(MessageDeletion::getMessageId).collect(Collectors.toList());
         // 存储删除记录
-        List<MessageDeletion> newDeletions =
-            messageIds.stream().filter(id -> existIds.stream().noneMatch(existId -> id.equals(existId))).map(id -> {
-                MessageDeletion deletion = new MessageDeletion();
-                deletion.setMessageId(id);
-                deletion.setDeleteType(DeleteType.BY_MESSAGE.getCode());
-                deletion.setChatType(chatType);
-                deletion.setChatId(chatId);
-                deletion.setUserId(userId);
-                deletion.setDeleteTime(new Date());
-                return deletion;
-            }).collect(Collectors.toList());
+        List<MessageDeletion> newDeletions = messageIds.stream().filter(id -> existIds.stream().noneMatch(existId -> id.equals(existId))).map(id -> {
+            MessageDeletion deletion = new MessageDeletion();
+            deletion.setMessageId(id);
+            deletion.setDeleteType(DeleteType.BY_MESSAGE.getCode());
+            deletion.setChatType(chatType);
+            deletion.setChatId(chatId);
+            deletion.setUserId(userId);
+            deletion.setDeleteTime(new Date());
+            return deletion;
+        }).collect(Collectors.toList());
         this.saveBatch(newDeletions);
     }
 
-    @CacheEvict(key = "#userId+':'+#chatType+':'+#chatId")
+    @CacheEvict(key = "#userId+\':\'+#chatType+\':\'+#chatId")
     @Transactional
     @Override
     public void deleteByChat(Long userId, Integer chatType, Long chatId, Long maxMessageId) {
@@ -93,7 +87,7 @@ public class MessageDeletionServiceImpl extends ServiceImpl<MessageDeletionMappe
     }
 
     @Override
-    @Cacheable(key = "#userId+':'+#chatType+':'+#chatId")
+    @Cacheable(key = "#userId+\':\'+#chatType+\':\'+#chatId")
     public List<MessageDeletion> findByChatIdAndType(Long userId, Integer chatType, Long chatId) {
         Date minDate = DateUtils.addDays(new Date(), Math.toIntExact(-Constant.MAX_OFFLINE_MESSAGE_DAYS));
         LambdaQueryWrapper<MessageDeletion> wrapper = Wrappers.lambdaQuery();
@@ -102,5 +96,8 @@ public class MessageDeletionServiceImpl extends ServiceImpl<MessageDeletionMappe
         wrapper.eq(MessageDeletion::getChatId, chatId);
         wrapper.ge(MessageDeletion::getDeleteTime, minDate);
         return this.list(wrapper);
+    }
+
+    public MessageDeletionServiceImpl() {
     }
 }

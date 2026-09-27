@@ -3,28 +3,20 @@ package com.bx.imserver.netty;
 import com.bx.imcommon.contant.IMRedisKey;
 import com.bx.imcommon.mq.RedisMQTemplate;
 import jakarta.annotation.PreDestroy;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
-@Slf4j
 @Component
-@AllArgsConstructor
 public class IMServerGroup implements CommandLineRunner {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IMServerGroup.class);
     public static volatile Long serverId = 0L;
-
     private final RedisMQTemplate redisMQTemplate;
-
     private final List<IMServer> imServers;
 
-    /***
+    /**
      * 判断服务器是否就绪
-     *
-     **/
+     */
     public boolean isReady() {
         for (IMServer imServer : imServers) {
             if (!imServer.isReady()) {
@@ -51,5 +43,10 @@ public class IMServerGroup implements CommandLineRunner {
         for (IMServer imServer : imServers) {
             imServer.stop();
         }
+    }
+
+    public IMServerGroup(final RedisMQTemplate redisMQTemplate, final List<IMServer> imServers) {
+        this.redisMQTemplate = redisMQTemplate;
+        this.imServers = imServers;
     }
 }

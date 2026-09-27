@@ -17,15 +17,13 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Objects;
 
 /**
  * WebSocket 长连接下 文本帧的处理器 实现浏览器发送文本回写 浏览器连接状态监控
  */
-@Slf4j
 public class IMChannelHandler extends SimpleChannelInboundHandler<IMSendInfo> {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IMChannelHandler.class);
 
     /**
      * 读取到消息后进行处理
@@ -96,7 +94,7 @@ public class IMChannelHandler extends SimpleChannelInboundHandler<IMSendInfo> {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
-            IdleState state = ((IdleStateEvent)evt).state();
+            IdleState state = ((IdleStateEvent) evt).state();
             if (state == IdleState.READER_IDLE) {
                 // 在规定时间内没有收到客户端的上行数据, 主动断开连接
                 AttributeKey<Long> attr = AttributeKey.valueOf("USER_ID");
@@ -109,6 +107,5 @@ public class IMChannelHandler extends SimpleChannelInboundHandler<IMSendInfo> {
         } else {
             super.userEventTriggered(ctx, evt);
         }
-
     }
 }

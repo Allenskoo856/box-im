@@ -9,11 +9,11 @@ spring:
       host: localhost
       port: 6379
 
-minio:
-  endpoint: http://127.0.0.1:9000 #内网地址
-  domain: http://192.168.2.67:9000  #外网访问地址
-  accessKey: minioadmin
-  secretKey: minioadmin
+obs:
+  endpoint: https://obs.cn-north-4.myhuaweicloud.com # 华为云OBS终端节点 (根据实际所在区域调整)
+  domain: https://obs.cn-north-4.myhuaweicloud.com   # 外网访问域名（可配置CDN加速域名）
+  accessKey: your-obs-ak
+  secretKey: your-obs-sk
   bucketName: box-im
   imagePath: image
   filePath: file

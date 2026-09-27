@@ -17,22 +17,16 @@ import com.bx.imserver.netty.UserChannelCtxMap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class LoginProcessor extends AbstractMessageProcessor<IMLoginInfo> {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LoginProcessor.class);
     private final RedisMQTemplate redisMQTemplate;
-
     @Value("${jwt.accessToken.secret}")
     private String accessTokenSecret;
 
@@ -118,5 +112,9 @@ public class LoginProcessor extends AbstractMessageProcessor<IMLoginInfo> {
     public IMLoginInfo transForm(Object o) {
         HashMap map = (HashMap) o;
         return BeanUtil.fillBeanWithMap(map, new IMLoginInfo(), false);
+    }
+
+    public LoginProcessor(final RedisMQTemplate redisMQTemplate) {
+        this.redisMQTemplate = redisMQTemplate;
     }
 }

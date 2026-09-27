@@ -6,16 +6,12 @@ import com.bx.imcommon.model.IMBatchPrivateMessage;
 import com.bx.imcommon.model.IMGroupMessage;
 import com.bx.imcommon.model.IMPrivateMessage;
 import com.bx.imcommon.model.IMSystemMessage;
-import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-
 import java.util.List;
 import java.util.Map;
 
 @Configuration
-@AllArgsConstructor
 public class IMClient {
-
     private final IMSender imSender;
 
     /**
@@ -23,7 +19,7 @@ public class IMClient {
      *
      * @param userId 用户id
      */
-    public Boolean isOnline(Long userId){
+    public Boolean isOnline(Long userId) {
         return imSender.isOnline(userId);
     }
 
@@ -33,10 +29,9 @@ public class IMClient {
      * @param userId 用户id
      * @param terminal 终端可惜
      */
-    public Boolean isOnline(Long userId,IMTerminalType terminal){
-        return imSender.isOnline(userId,terminal);
+    public Boolean isOnline(Long userId, IMTerminalType terminal) {
+        return imSender.isOnline(userId, terminal);
     }
-
 
     /**
      * 判断多个用户是否在线
@@ -44,10 +39,9 @@ public class IMClient {
      * @param userIds 用户id列表
      * @return 在线的用户列表
      */
-    public List<Long> getOnlineUser(List<Long> userIds){
+    public List<Long> getOnlineUser(List<Long> userIds) {
         return imSender.getOnlineUser(userIds);
     }
-
 
     /**
      * 判断多个用户是否在线
@@ -55,7 +49,7 @@ public class IMClient {
      * @param userIds 用户id列表
      * @return 在线的用户终端
      */
-    public Map<Long,List<IMTerminalType>> getOnlineTerminal(List<Long> userIds){
+    public Map<Long, List<IMTerminalType>> getOnlineTerminal(List<Long> userIds) {
         return imSender.getOnlineTerminal(userIds);
     }
 
@@ -66,7 +60,7 @@ public class IMClient {
      * @param type   下线类型，见 IMForceLogoutType
      * @param reason 原因说明
      */
-    public void forceLogout(Long userId, Integer type, String reason){
+    public void forceLogout(Long userId, Integer type, String reason) {
         imSender.forceLogout(userId, type, reason);
     }
 
@@ -75,27 +69,25 @@ public class IMClient {
      *
      * @param message 私有消息
      */
-    public<T> void sendSystemMessage(IMSystemMessage<T> message){
+    public <T> void sendSystemMessage(IMSystemMessage<T> message) {
         imSender.sendSystemMessage(message);
     }
-
 
     /**
      * 发送私聊消息（发送结果通过MessageListener接收）
      *
      * @param message 私有消息
      */
-    public<T> void sendPrivateMessage(IMPrivateMessage<T> message){
+    public <T> void sendPrivateMessage(IMPrivateMessage<T> message) {
         imSender.sendPrivateMessage(message);
     }
-
 
     /**
      * 批量发送私聊消息（发送结果通过MessageListener接收）
      *
      * @param message 私有消息
      */
-    public<T> void sendBatchPrivateMessage(IMBatchPrivateMessage<T> message){
+    public <T> void sendBatchPrivateMessage(IMBatchPrivateMessage<T> message) {
         imSender.sendBatchPrivateMessage(message);
     }
 
@@ -104,11 +96,11 @@ public class IMClient {
      *
      * @param message 群聊消息
      */
-    public<T> void sendGroupMessage(IMGroupMessage<T> message){
+    public <T> void sendGroupMessage(IMGroupMessage<T> message) {
         imSender.sendGroupMessage(message);
     }
 
-
-
-
+    public IMClient(final IMSender imSender) {
+        this.imSender = imSender;
+    }
 }

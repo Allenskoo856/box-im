@@ -33,8 +33,6 @@ import com.bx.implatform.util.ConvUtil;
 import com.bx.implatform.vo.FriendVO;
 import com.bx.implatform.vo.PrivateMessageVO;
 import com.bx.implatform.vo.UserOnlineVO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
@@ -44,16 +42,13 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 @CacheConfig(cacheNames = RedisKey.IM_CACHE_FRIEND)
 public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> implements FriendService {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FriendServiceImpl.class);
     private final UserMapper userMapper;
     private final IMClient imClient;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -100,7 +95,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         return friends.stream().map(Friend::getFriendId).collect(Collectors.toList());
     }
 
-    @RedisLock(prefixKey = RedisKey.IM_LOCK_FRIEND_ADD, key = "#userId+':'+#friendId")
+    @RedisLock(prefixKey = RedisKey.IM_LOCK_FRIEND_ADD, key = "#userId+\':\'+#friendId")
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void addFriend(Long userId, Long friendId) {
@@ -108,7 +103,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
             throw new GlobalException("不允许添加自己为好友");
         }
         // 互相绑定好友关系
-        FriendServiceImpl proxy = (FriendServiceImpl)AopContext.currentProxy();
+        FriendServiceImpl proxy = (FriendServiceImpl) AopContext.currentProxy();
         proxy.bindFriend(userId, friendId);
         proxy.bindFriend(friendId, userId);
         // 推送添加好友提示
@@ -121,7 +116,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     public void delFriend(Long friendId) {
         Long userId = SessionContext.getSession().getUserId();
         // 互相解除好友关系，走代理清理缓存
-        FriendServiceImpl proxy = (FriendServiceImpl)AopContext.currentProxy();
+        FriendServiceImpl proxy = (FriendServiceImpl) AopContext.currentProxy();
         proxy.unbindFriend(userId, friendId);
         proxy.unbindFriend(friendId, userId);
         // 推送解除好友提示
@@ -130,7 +125,6 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         IMTerminalType.codes().forEach(terminal -> sendOnlineStatus(friendId, userId, terminal));
         log.info("删除好友，用户id:{},好友id:{}", userId, friendId);
     }
-
 
     @Override
     public void sendOnlineStatus(Long userId, Integer terminal) {
@@ -174,7 +168,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         imClient.sendPrivateMessage(sendMessage);
     }
 
-    @Cacheable(key = "#userId1+':'+#userId2")
+    @Cacheable(key = "#userId1+\':\'+#userId2")
     @Override
     public Boolean isFriend(Long userId1, Long userId2) {
         LambdaQueryWrapper<Friend> wrapper = Wrappers.lambdaQuery();
@@ -190,7 +184,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
      * @param userId   用户id
      * @param friendId 好友的用户id
      */
-    @CacheEvict(key = "#userId+':'+#friendId")
+    @CacheEvict(key = "#userId+\':\'+#friendId")
     public void bindFriend(Long userId, Long friendId) {
         QueryWrapper<Friend> wrapper = new QueryWrapper<>();
         wrapper.lambda().eq(Friend::getUserId, userId).eq(Friend::getFriendId, friendId);
@@ -242,7 +236,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
      * @param userId   用户id
      * @param friendId 好友的用户id
      */
-    @CacheEvict(key = "#userId+':'+#friendId")
+    @CacheEvict(key = "#userId+\':\'+#friendId")
     public void unbindFriend(Long userId, Long friendId) {
         // 逻辑删除
         LambdaUpdateWrapper<Friend> wrapper = Wrappers.lambdaUpdate();
@@ -434,4 +428,9 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         imClient.sendPrivateMessage(sendMessage);
     }
 
+    public FriendServiceImpl(final UserMapper userMapper, final IMClient imClient, final RedisTemplate<String, Object> redisTemplate) {
+        this.userMapper = userMapper;
+        this.imClient = imClient;
+        this.redisTemplate = redisTemplate;
+    }
 }

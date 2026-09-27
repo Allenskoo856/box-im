@@ -30,21 +30,15 @@
         <knife4j.version>4.5.0</knife4j.version>
         <hutool.version>5.8.28</hutool.version>
         <druid.version>1.1.22</druid.version>
-        <minio.version>8.5.1</minio.version>
+        <obs.version>3.26.6</obs.version>
         <redisson.version>3.21.3</redisson.version>
         <commons-lang3.version>3.8.1</commons-lang3.version>
-        <lombok.version>1.18.32</lombok.version>
         <mybatis.spring.version>3.0.3</mybatis.spring.version>
     </properties>
 
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-boot-starter</artifactId>
@@ -79,7 +73,7 @@
         <repository>
             <id>aliyun-maven</id>
             <name>aliyun maven</name>
-            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+            <url>https://maven.aliyun.com/repository/public</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>

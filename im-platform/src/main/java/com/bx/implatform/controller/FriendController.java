@@ -13,17 +13,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Tag(name = "好友")
 @RestController
 @RequestMapping("/friend")
-@RequiredArgsConstructor
 public class FriendController {
-
     private final FriendService friendService;
 
     @GetMapping("/list")
@@ -32,19 +28,17 @@ public class FriendController {
         return ResultUtils.success(friendService.findFriends(version));
     }
 
-
     @GetMapping("/online")
     @Operation(summary = "判断好友在线情况", description = "返回在线的好友终端集合")
     public Result<List<UserOnlineVO>> findOnlineTerminals() {
         return ResultUtils.success(friendService.findOnlineTerminals());
     }
 
-
     @RepeatSubmit
     @PostMapping("/add")
     @Operation(summary = "添加好友", description = "双方建立好友关系")
     public Result addFriend(@NotNull(message = "好友id不可为空") @RequestParam Long friendId) {
-        friendService.addFriend(SessionContext.getSession().getUserId(),friendId);
+        friendService.addFriend(SessionContext.getSession().getUserId(), friendId);
         return ResultUtils.success();
     }
 
@@ -53,7 +47,6 @@ public class FriendController {
     public Result<FriendVO> findFriend(@NotNull(message = "好友id不可为空") @PathVariable Long friendId) {
         return ResultUtils.success(friendService.findFriend(friendId));
     }
-
 
     @DeleteMapping("/delete/{friendId}")
     @Operation(summary = "删除好友", description = "解除好友关系")
@@ -76,5 +69,7 @@ public class FriendController {
         return ResultUtils.success();
     }
 
+    public FriendController(final FriendService friendService) {
+        this.friendService = friendService;
+    }
 }
-

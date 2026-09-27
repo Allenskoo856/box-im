@@ -6,12 +6,9 @@ import com.bx.implatform.result.ResultUtils;
 import com.bx.implatform.vo.SystemConfigVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-
 
 /**
  * @author: blue
@@ -21,9 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "系统相关")
 @RestController
 @RequestMapping("/system")
-@RequiredArgsConstructor
 public class SystemController {
-
     private final WebrtcConfig webrtcConfig;
 
     @GetMapping("/config")
@@ -32,5 +27,7 @@ public class SystemController {
         return ResultUtils.success(new SystemConfigVO(webrtcConfig));
     }
 
-
+    public SystemController(final WebrtcConfig webrtcConfig) {
+        this.webrtcConfig = webrtcConfig;
+    }
 }

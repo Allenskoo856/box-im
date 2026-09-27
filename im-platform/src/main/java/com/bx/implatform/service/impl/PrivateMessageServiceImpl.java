@@ -36,8 +36,6 @@ import com.bx.implatform.util.BeanUtils;
 import com.bx.implatform.util.ConvUtil;
 import com.bx.implatform.util.SensitiveFilterUtil;
 import com.bx.implatform.vo.PrivateMessageVO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -45,17 +43,13 @@ import org.springframework.aop.framework.AopContext;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
-public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper, PrivateMessage>
-        implements PrivateMessageService {
-
+public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper, PrivateMessage> implements PrivateMessageService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PrivateMessageServiceImpl.class);
     private final FriendService friendService;
     private final IMClient imClient;
     private final MessageDeletionService messageDeletionService;
@@ -108,8 +102,7 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
         if (!recallMessage.getSendId().equals(session.getUserId())) {
             throw new GlobalException("这条消息不是由您发送,无法撤回");
         }
-        if (System.currentTimeMillis() - recallMessage.getSendTime()
-                .getTime() > IMConstant.ALLOW_RECALL_SECOND * 1000) {
+        if (System.currentTimeMillis() - recallMessage.getSendTime().getTime() > IMConstant.ALLOW_RECALL_SECOND * 1000) {
             throw new GlobalException("消息已发送超过5分钟，无法撤回");
         }
         // 记录撤回提示语到扩展字段(用于前端展示)
@@ -139,11 +132,9 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
         sendMessage.setRecvId(vo.getRecvId());
         sendMessage.setData(vo);
         imClient.sendPrivateMessage(sendMessage);
-        log.info("撤回私聊消息，发送id:{},接收id:{}，内容:{}", message.getSendId(), message.getRecvId(),
-                message.getContent());
+        log.info("撤回私聊消息，发送id:{},接收id:{}，内容:{}", message.getSendId(), message.getRecvId(), message.getContent());
         return vo;
     }
-
 
     @Override
     public List<PrivateMessageVO> loadOfflineMessage(Long minId) {
@@ -155,8 +146,7 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
         Date minDate = DateUtils.addDays(new Date(), Math.toIntExact(-Constant.MAX_OFFLINE_MESSAGE_DAYS));
         wrapper.gt(PrivateMessage::getId, minId);
         wrapper.ge(PrivateMessage::getSendTime, minDate);
-        wrapper.and(wp -> wp.eq(PrivateMessage::getSendId, session.getUserId()).or()
-                .eq(PrivateMessage::getRecvId, session.getUserId()));
+        wrapper.and(wp -> wp.eq(PrivateMessage::getSendId, session.getUserId()).or().eq(PrivateMessage::getRecvId, session.getUserId()));
         wrapper.orderByDesc(PrivateMessage::getId);
         wrapper.last("limit " + Constant.MAX_OFFLINE_MESSAGE_SIZE);
         List<PrivateMessage> messages = this.list(wrapper);
@@ -164,14 +154,11 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
         if (messages.size() >= Constant.MAX_OFFLINE_MESSAGE_SIZE) {
             messages = appendLastMessageInConversation(messages, minId);
         }
-        List<MessageDeletion> deletions =
-                messageDeletionService.findByChatType(session.getUserId(), ChatType.PRIVATE.getCode());
+        List<MessageDeletion> deletions = messageDeletionService.findByChatType(session.getUserId(), ChatType.PRIVATE.getCode());
         // 整个会话删除的消息不在重复推送
         messages = messages.stream().filter(m -> !isDeleteChat(m, deletions)).collect(Collectors.toList());
         // 更新消息为送达状态
-        List<Long> messageIds = messages.stream().filter(m -> m.getRecvId().equals(session.getUserId()))
-                .filter(m -> m.getStatus().equals(MessageStatus.PENDING.code())).map(PrivateMessage::getId)
-                .collect(Collectors.toList());
+        List<Long> messageIds = messages.stream().filter(m -> m.getRecvId().equals(session.getUserId())).filter(m -> m.getStatus().equals(MessageStatus.PENDING.code())).map(PrivateMessage::getId).collect(Collectors.toList());
         if (!messageIds.isEmpty()) {
             LambdaUpdateWrapper<PrivateMessage> updateWrapper = Wrappers.lambdaUpdate();
             updateWrapper.in(PrivateMessage::getId, messageIds);
@@ -184,8 +171,7 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
             vo.setDeleted(isDeleteMessage(m, deletions));
             return vo;
         }).toList();
-        log.info("拉取离线私聊消息,用户id:{},数量:{},耗时:{},minId:{}", session.getUserId(), vos.size(),
-                System.currentTimeMillis() - time, minId);
+        log.info("拉取离线私聊消息,用户id:{},数量:{},耗时:{},minId:{}", session.getUserId(), vos.size(), System.currentTimeMillis() - time, minId);
         return vos.stream().sorted(Comparator.comparing(PrivateMessageVO::getId)).collect(Collectors.toList());
     }
 
@@ -302,9 +288,7 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
             return new ArrayList<>();
         }
         // 已经删除的消息
-        List<MessageDeletion> deletions =
-                messageDeletionService.findByChatIdAndType(session.getUserId(), ChatType.PRIVATE.getCode(),
-                        dto.getFriendId());
+        List<MessageDeletion> deletions = messageDeletionService.findByChatIdAndType(session.getUserId(), ChatType.PRIVATE.getCode(), dto.getFriendId());
         // 整个会话删掉的消息就不再推送了
         messages = messages.stream().filter(m -> !isDeleteChat(m, deletions)).collect(Collectors.toList());
         // 转换vo
@@ -318,8 +302,7 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
     @Override
     public void deleteMessage(MessageDeleteDTO dto) {
         UserSession session = SessionContext.getSession();
-        messageDeletionService.deleteByMessage(session.getUserId(), ChatType.PRIVATE.getCode(), dto.getChatId(),
-                dto.getMessageIds());
+        messageDeletionService.deleteByMessage(session.getUserId(), ChatType.PRIVATE.getCode(), dto.getChatId(), dto.getMessageIds());
     }
 
     @Override
@@ -333,7 +316,6 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
         }
         messageDeletionService.deleteByChat(userId, ChatType.PRIVATE.getCode(), dto.getChatId(), maxMessageId);
     }
-
 
     private Long getNextSeqNo(String convKey) {
         String key = StrUtil.join(":", RedisKey.IM_PRIVATE_MESSAGE_MAX_SEQ, convKey);
@@ -407,12 +389,9 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
         if (fIds.isEmpty()) {
             return messages;
         }
-        List<String> keys =
-                fIds.stream().map(id -> buildMaxMessageIdKey(session.getUserId(), id)).collect(Collectors.toList());
+        List<String> keys = fIds.stream().map(id -> buildMaxMessageIdKey(session.getUserId(), id)).collect(Collectors.toList());
         List<Object> maxMessageIds = redisTemplate.opsForValue().multiGet(keys);
-        maxMessageIds =
-                maxMessageIds.stream().filter(id -> !Objects.isNull(id) && Long.parseLong(id.toString()) > minId)
-                        .collect(Collectors.toList());
+        maxMessageIds = maxMessageIds.stream().filter(id -> !Objects.isNull(id) && Long.parseLong(id.toString()) > minId).collect(Collectors.toList());
         if (maxMessageIds.isEmpty()) {
             return messages;
         }
@@ -427,8 +406,7 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
 
     private Boolean isDeleteMessage(PrivateMessage message, List<MessageDeletion> deletions) {
         return deletions.stream().anyMatch(deletion -> {
-            if (!message.getSendId().equals(deletion.getChatId()) && !message.getRecvId()
-                    .equals(deletion.getChatId())) {
+            if (!message.getSendId().equals(deletion.getChatId()) && !message.getRecvId().equals(deletion.getChatId())) {
                 return false;
             }
             if (DeleteType.BY_MESSAGE.getCode().equals(deletion.getDeleteType())) {
@@ -440,8 +418,7 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
 
     private Boolean isDeleteChat(PrivateMessage message, List<MessageDeletion> deletions) {
         return deletions.stream().anyMatch(deletion -> {
-            if (!message.getSendId().equals(deletion.getChatId()) && !message.getRecvId()
-                    .equals(deletion.getChatId())) {
+            if (!message.getSendId().equals(deletion.getChatId()) && !message.getRecvId().equals(deletion.getChatId())) {
                 return false;
             }
             if (DeleteType.BY_CHAT.getCode().equals(deletion.getDeleteType())) {
@@ -457,5 +434,14 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
 
     private String buildMaxMessageIdKey(Long userId1, Long userId2) {
         return StrUtil.join(":", RedisKey.IM_PRIVATE_MESSAGE_MAX_ID, ConvUtil.buildConvKey(userId1, userId2));
+    }
+
+    public PrivateMessageServiceImpl(final FriendService friendService, final IMClient imClient, final MessageDeletionService messageDeletionService, final SensitiveFilterUtil sensitiveFilterUtil, final RedisTemplate<String, Object> redisTemplate, final RedissonClient redissonClient) {
+        this.friendService = friendService;
+        this.imClient = imClient;
+        this.messageDeletionService = messageDeletionService;
+        this.sensitiveFilterUtil = sensitiveFilterUtil;
+        this.redisTemplate = redisTemplate;
+        this.redissonClient = redissonClient;
     }
 }

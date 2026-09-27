@@ -9,11 +9,8 @@ import com.bx.imcommon.mq.RedisMQListener;
 import com.bx.implatform.config.props.JwtProperties;
 import com.bx.implatform.contant.RedisKey;
 import com.bx.implatform.dto.UserBanDTO;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,12 +18,10 @@ import java.util.concurrent.TimeUnit;
  * @date: 2024-07-15
  * @version: 1.0
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 @RedisMQListener(queue = RedisKey.IM_QUEUE_USER_BANNED)
 public class UserBannedConsumerTask extends RedisMQConsumer<UserBanDTO> {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserBannedConsumerTask.class);
     private final IMClient imClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final JwtProperties jwtProperties;
@@ -36,8 +31,13 @@ public class UserBannedConsumerTask extends RedisMQConsumer<UserBanDTO> {
         log.info("用户被封禁处理,userId:{},原因:{}", dto.getId(), dto.getReason());
         // 写入拒绝访问标记，拦截 HTTP 鉴权与 WS 重连（TTL 对齐 accessToken）
         String key = StrUtil.join(":", IMRedisKey.IM_USER_DENIED, dto.getId());
-        redisTemplate.opsForValue().set(key, IMForceLogoutType.BANNED.code(),
-            jwtProperties.getAccessTokenExpireIn(), TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(key, IMForceLogoutType.BANNED.code(), jwtProperties.getAccessTokenExpireIn(), TimeUnit.SECONDS);
         imClient.forceLogout(dto.getId(), IMForceLogoutType.BANNED.code(), dto.getReason());
+    }
+
+    public UserBannedConsumerTask(final IMClient imClient, final RedisTemplate<String, Object> redisTemplate, final JwtProperties jwtProperties) {
+        this.imClient = imClient;
+        this.redisTemplate = redisTemplate;
+        this.jwtProperties = jwtProperties;
     }
 }

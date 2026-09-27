@@ -6,15 +6,12 @@ import com.bx.imcommon.model.IMForceLogoutInfo;
 import com.bx.imcommon.mq.RedisMQListener;
 import com.bx.imserver.netty.processor.AbstractMessageProcessor;
 import com.bx.imserver.netty.processor.ProcessorFactory;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 @RedisMQListener(queue = IMRedisKey.IM_USER_FORCE_LOGOUT_QUEUE)
 public class PullForceLogoutTask extends AbstractPullMessageTask<IMForceLogoutInfo> {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PullForceLogoutTask.class);
 
     @Override
     public void onMessage(IMForceLogoutInfo logoutInfo) {
@@ -22,4 +19,6 @@ public class PullForceLogoutTask extends AbstractPullMessageTask<IMForceLogoutIn
         processor.process(logoutInfo);
     }
 
+    public PullForceLogoutTask() {
+    }
 }

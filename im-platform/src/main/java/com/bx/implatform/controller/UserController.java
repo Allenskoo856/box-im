@@ -13,17 +13,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Tag(name = "用户相关")
 @RestController
 @RequestMapping("/user")
-@RequiredArgsConstructor
 public class UserController {
-
     private final UserService userService;
 
     @GetMapping("/terminal/online")
@@ -31,7 +27,6 @@ public class UserController {
     public Result<List<OnlineTerminalVO>> getOnlineTerminal(@NotNull @RequestParam("userIds") String userIds) {
         return ResultUtils.success(userService.getOnlineTerminals(userIds));
     }
-
 
     @GetMapping("/self")
     @Operation(summary = "获取当前用户信息", description = "获取当前用户信息")
@@ -41,7 +36,6 @@ public class UserController {
         UserVO userVO = BeanUtils.copyProperties(user, UserVO.class);
         return ResultUtils.success(userVO);
     }
-
 
     @GetMapping("/find/{id}")
     @Operation(summary = "查找用户", description = "根据id查找用户")
@@ -61,5 +55,8 @@ public class UserController {
     public Result<List<UserVO>> search(@RequestParam String name) {
         return ResultUtils.success(userService.search(name));
     }
-}
 
+    public UserController(final UserService userService) {
+        this.userService = userService;
+    }
+}

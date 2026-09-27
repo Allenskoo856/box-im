@@ -1,35 +1,25 @@
 package com.bx.imcommon.enums;
 
-import lombok.AllArgsConstructor;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
 public enum IMTerminalType {
-
     /**
      * web
      */
-    WEB(0, "web"),
-    /**
+    WEB(0, "web"), /**
      * app
      */
-    APP(1, "app"),
-    /**
+    APP(1, "app"), /**
      * pc
      */
-    PC(2, "pc"),
-    /**
+    PC(2, "pc"), /**
      * 未知
      */
     UNKNOW(-1, "未知");
-
     private final Integer code;
-
     private final String desc;
-
 
     public static IMTerminalType fromCode(Integer code) {
         for (IMTerminalType typeEnum : values()) {
@@ -48,4 +38,8 @@ public enum IMTerminalType {
         return this.code;
     }
 
+    private IMTerminalType(final Integer code, final String desc) {
+        this.code = code;
+        this.desc = desc;
+    }
 }
